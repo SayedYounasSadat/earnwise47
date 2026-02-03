@@ -1,10 +1,12 @@
 // Timer display component with animated digits
 import { memo } from "react";
 import { cn } from "@/lib/utils";
+import { Coffee } from "lucide-react";
 
 interface TimerDisplayProps {
   seconds: number;
   isActive: boolean;
+  isPaused: boolean;
 }
 
 // Format seconds to HH:MM:SS
@@ -34,8 +36,17 @@ const Digit = memo(({ value, isActive }: { value: string; isActive: boolean }) =
 
 Digit.displayName = "Digit";
 
-export const TimerDisplay = memo(({ seconds, isActive }: TimerDisplayProps) => {
+export const TimerDisplay = memo(({ seconds, isActive, isPaused }: TimerDisplayProps) => {
   const time = formatTime(seconds);
+
+  // Determine status
+  const getStatus = () => {
+    if (isPaused) return { label: "On Break", color: "status-paused", dotColor: "bg-warning" };
+    if (isActive) return { label: "Working", color: "status-working", dotColor: "bg-success-foreground animate-pulse" };
+    return { label: "Not Working", color: "status-idle", dotColor: "bg-muted-foreground" };
+  };
+
+  const status = getStatus();
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -43,31 +54,30 @@ export const TimerDisplay = memo(({ seconds, isActive }: TimerDisplayProps) => {
       <div
         className={cn(
           "flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300",
-          isActive ? "status-working" : "status-idle"
+          isPaused ? "bg-warning/20 text-warning" : (isActive ? "status-working" : "status-idle")
         )}
       >
-        <span
-          className={cn(
-            "w-2 h-2 rounded-full",
-            isActive ? "bg-success-foreground animate-pulse" : "bg-muted-foreground"
-          )}
-        />
-        {isActive ? "Working" : "Not Working"}
+        {isPaused ? (
+          <Coffee className="w-4 h-4" />
+        ) : (
+          <span className={cn("w-2 h-2 rounded-full", status.dotColor)} />
+        )}
+        {status.label}
       </div>
 
       {/* Timer */}
       <div
         className={cn(
           "timer-display transition-colors duration-300",
-          isActive ? "text-success" : "text-muted-foreground"
+          isPaused ? "text-warning" : (isActive ? "text-success" : "text-muted-foreground")
         )}
       >
         <Digit value={time.hours[0]} isActive={isActive} />
         <Digit value={time.hours[1]} isActive={isActive} />
-        <span className={cn("mx-1", isActive && "animate-pulse-soft")}>:</span>
+        <span className={cn("mx-1", isActive && !isPaused && "animate-pulse-soft")}>:</span>
         <Digit value={time.minutes[0]} isActive={isActive} />
         <Digit value={time.minutes[1]} isActive={isActive} />
-        <span className={cn("mx-1", isActive && "animate-pulse-soft")}>:</span>
+        <span className={cn("mx-1", isActive && !isPaused && "animate-pulse-soft")}>:</span>
         <Digit value={time.seconds[0]} isActive={isActive} />
         <Digit value={time.seconds[1]} isActive={isActive} />
       </div>

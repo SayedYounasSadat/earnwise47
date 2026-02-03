@@ -69,8 +69,10 @@ const getInitialState = (): AppState => {
     return {
       ...saved,
       isWorking: false, // Always start stopped
+      isPaused: false,
       currentSessionStart: null,
-      currentSessionDuration: 0,
+      currentSessionDuration: saved.currentSessionDuration || 0, // Preserve duration
+      accumulatedDuration: saved.accumulatedDuration || 0,
       totalEarningsToday: todayLog?.totalEarnings || 0,
       loginTime: saved.loginTime || Date.now(),
     };
@@ -78,8 +80,10 @@ const getInitialState = (): AppState => {
 
   return {
     isWorking: false,
+    isPaused: false,
     currentSessionStart: null,
     currentSessionDuration: 0,
+    accumulatedDuration: 0,
     totalEarningsToday: 0,
     sessions: [],
     dailyLogs: [],
@@ -148,13 +152,16 @@ export const useEarningsTracker = () => {
     [state.lastMilestone, state.settings.notifications]
   );
 
-  // Timer tick
+  // Timer tick - only runs when working AND not paused
   useEffect(() => {
-    if (state.isWorking && state.currentSessionStart) {
+    if (state.isWorking && !state.isPaused && state.currentSessionStart) {
       intervalRef.current = setInterval(() => {
         setState((prev) => {
           const elapsed = Math.floor((Date.now() - prev.currentSessionStart!) / 1000);
-          return { ...prev, currentSessionDuration: elapsed };
+          return { 
+            ...prev, 
+            currentSessionDuration: prev.accumulatedDuration + elapsed 
+          };
         });
       }, 100); // Update every 100ms for smooth animation
     } else {
@@ -169,7 +176,7 @@ export const useEarningsTracker = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [state.isWorking, state.currentSessionStart]);
+  }, [state.isWorking, state.isPaused, state.currentSessionStart]);
 
   // Auto-save every second
   useEffect(() => {
@@ -184,6 +191,11 @@ export const useEarningsTracker = () => {
     };
   }, [state]);
 
+  // Save immediately on critical changes
+  useEffect(() => {
+    saveState(state);
+  }, [state.isWorking, state.isPaused, state.currentSessionDuration, state.sessions]);
+
   // Check milestones on earnings change
   useEffect(() => {
     const todayEarnings = calculateTodayEarnings();
@@ -195,8 +207,10 @@ export const useEarningsTracker = () => {
     setState((prev) => ({
       ...prev,
       isWorking: true,
+      isPaused: false,
       currentSessionStart: Date.now(),
       currentSessionDuration: 0,
+      accumulatedDuration: 0,
     }));
 
     toast({
@@ -205,19 +219,56 @@ export const useEarningsTracker = () => {
     });
   }, []);
 
+  // Pause (take a break)
+  const pauseWork = useCallback(() => {
+    if (!state.isWorking || state.isPaused) return;
+
+    setState((prev) => ({
+      ...prev,
+      isPaused: true,
+      accumulatedDuration: prev.currentSessionDuration,
+      currentSessionStart: null,
+    }));
+
+    toast({
+      title: "☕ Break Time",
+      description: "Timer paused. Take your time!",
+    });
+  }, [state.isWorking, state.isPaused]);
+
+  // Resume from pause
+  const resumeWork = useCallback(() => {
+    if (!state.isPaused) return;
+
+    setState((prev) => ({
+      ...prev,
+      isPaused: false,
+      currentSessionStart: Date.now(),
+    }));
+
+    toast({
+      title: "⏱️ Back to Work",
+      description: "Timer resumed. Let's go!",
+    });
+  }, [state.isPaused]);
+
   // Stop working
   const stopWork = useCallback(
     (notes: string = "") => {
-      if (!state.isWorking || !state.currentSessionStart) return;
+      if (!state.isWorking && !state.isPaused) return;
+      if (state.currentSessionDuration === 0) {
+        resetSession();
+        return;
+      }
 
       const now = Date.now();
-      const duration = Math.floor((now - state.currentSessionStart) / 1000);
+      const duration = state.currentSessionDuration;
       const earnings = (duration / 3600) * state.settings.hourlyRate;
       const today = getTodayDate();
 
       const newSession: WorkSession = {
         id: generateId(),
-        startTime: state.currentSessionStart,
+        startTime: now - (duration * 1000),
         endTime: now,
         duration,
         earnings,
@@ -228,8 +279,10 @@ export const useEarningsTracker = () => {
       setState((prev) => ({
         ...prev,
         isWorking: false,
+        isPaused: false,
         currentSessionStart: null,
         currentSessionDuration: 0,
+        accumulatedDuration: 0,
         sessions: [...prev.sessions, newSession],
       }));
 
@@ -238,7 +291,7 @@ export const useEarningsTracker = () => {
         description: `Earned $${earnings.toFixed(2)} in ${Math.floor(duration / 60)}m ${duration % 60}s`,
       });
     },
-    [state.isWorking, state.currentSessionStart, state.settings.hourlyRate]
+    [state.isWorking, state.isPaused, state.currentSessionDuration, state.settings.hourlyRate]
   );
 
   // Reset current session
@@ -246,8 +299,10 @@ export const useEarningsTracker = () => {
     setState((prev) => ({
       ...prev,
       isWorking: false,
+      isPaused: false,
       currentSessionStart: null,
       currentSessionDuration: 0,
+      accumulatedDuration: 0,
     }));
 
     toast({
@@ -352,33 +407,6 @@ export const useEarningsTracker = () => {
     });
   }, []);
 
-  // Get chart data for last N days
-  const getChartData = useCallback(
-    (days: number = 7) => {
-      const data: { date: string; earnings: number; hours: number; label: string }[] = [];
-      const today = new Date();
-
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split("T")[0];
-        const daySessions = state.sessions.filter((s) => s.date === dateStr);
-        const totalEarnings = daySessions.reduce((sum, s) => sum + s.earnings, 0);
-        const totalHours = daySessions.reduce((sum, s) => sum + s.duration, 0) / 3600;
-
-        data.push({
-          date: dateStr,
-          earnings: totalEarnings,
-          hours: totalHours,
-          label: date.toLocaleDateString("en-US", { weekday: "short" }),
-        });
-      }
-
-      return data;
-    },
-    [state.sessions]
-  );
-
   // Toggle dark mode
   const toggleDarkMode = useCallback(() => {
     const newDarkMode = !state.settings.darkMode;
@@ -403,6 +431,7 @@ export const useEarningsTracker = () => {
   return {
     state,
     isWorking: state.isWorking,
+    isPaused: state.isPaused,
     currentDuration: state.currentSessionDuration,
     currentEarnings: calculateCurrentEarnings(),
     todayEarnings: calculateTodayEarnings(),
@@ -412,6 +441,8 @@ export const useEarningsTracker = () => {
     sessions: state.sessions,
     schedule: state.schedule,
     startWork,
+    pauseWork,
+    resumeWork,
     stopWork,
     resetSession,
     updateSettings,
@@ -420,7 +451,6 @@ export const useEarningsTracker = () => {
     exportCSV,
     importJSON,
     clearLogs,
-    getChartData,
     toggleDarkMode,
   };
 };

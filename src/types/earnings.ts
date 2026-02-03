@@ -38,8 +38,10 @@ export interface Settings {
 
 export interface AppState {
   isWorking: boolean;
+  isPaused: boolean;
   currentSessionStart: number | null;
   currentSessionDuration: number;
+  accumulatedDuration: number; // Duration accumulated before pause
   totalEarningsToday: number;
   sessions: WorkSession[];
   dailyLogs: DailyLog[];
