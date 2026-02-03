@@ -1,6 +1,7 @@
-// Main dashboard layout component
+// Main dashboard layout with tabs
 import { useState, useCallback } from "react";
 import { useEarningsTracker } from "@/hooks/useEarningsTracker";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "./Header";
 import { TimerDisplay } from "./TimerDisplay";
 import { EarningsDisplay } from "./EarningsDisplay";
@@ -13,10 +14,12 @@ import { NotesCard } from "./NotesCard";
 import { EarningsChart } from "./EarningsChart";
 import { ExportImportCard } from "./ExportImportCard";
 import { ScheduleCard } from "./ScheduleCard";
+import { Home, BarChart3, History, Settings, Calendar } from "lucide-react";
 
 export const Dashboard = () => {
   const {
     isWorking,
+    isPaused,
     currentDuration,
     currentEarnings,
     todayEarnings,
@@ -26,6 +29,8 @@ export const Dashboard = () => {
     sessions,
     schedule,
     startWork,
+    pauseWork,
+    resumeWork,
     stopWork,
     resetSession,
     updateSettings,
@@ -34,7 +39,6 @@ export const Dashboard = () => {
     exportCSV,
     importJSON,
     clearLogs,
-    getChartData,
     toggleDarkMode,
   } = useEarningsTracker();
 
@@ -47,104 +51,174 @@ export const Dashboard = () => {
     setSessionNotes("");
   }, [stopWork, sessionNotes]);
 
-  // Chart data
-  const chartData = getChartData(7);
-
   return (
     <div className="min-h-screen bg-background theme-transition">
       <Header isDarkMode={settings.darkMode} onToggleDarkMode={toggleDarkMode} />
 
-      <main className="container py-6 md:py-8">
-        {/* Hero section - Timer and Earnings */}
-        <section className="glass-card rounded-2xl p-6 md:p-8 mb-6 animate-fade-in">
-          <div className="grid gap-8 md:grid-cols-2">
-            {/* Timer */}
-            <div className="flex flex-col items-center justify-center">
-              <TimerDisplay seconds={currentDuration} isActive={isWorking} />
-            </div>
-
-            {/* Earnings */}
-            <div className="flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-border pt-8 md:pt-0 md:pl-8">
-              <EarningsDisplay
-                usdAmount={currentEarnings}
-                exchangeRate={settings.exchangeRate}
-                currencyCode={settings.currencyCode}
-                isActive={isWorking}
-              />
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="mt-8 pt-6 border-t border-border">
-            <TimerControls
-              isWorking={isWorking}
-              onStart={startWork}
-              onStop={handleStop}
-              onReset={resetSession}
-            />
-          </div>
+      <main className="container py-4 md:py-6">
+        {/* Hero Progress Bar - Always visible at top */}
+        <section className="mb-6 animate-fade-in">
+          <ProgressCard 
+            currentEarnings={todayEarnings} 
+            dailyGoal={settings.dailyGoal}
+            isWorking={isWorking && !isPaused}
+          />
         </section>
 
-        {/* Dashboard grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Progress */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            <ProgressCard currentEarnings={todayEarnings} dailyGoal={settings.dailyGoal} />
-          </div>
+        {/* Main Tabs */}
+        <Tabs defaultValue="timer" className="w-full">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="timer" className="flex items-center gap-2">
+              <Home className="w-4 h-4" />
+              <span className="hidden sm:inline">Timer</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="flex items-center gap-2">
+              <History className="w-4 h-4" />
+              <span className="hidden sm:inline">Logs</span>
+            </TabsTrigger>
+            <TabsTrigger value="schedule" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Schedule</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Totals */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.15s" }}>
-            <TotalsCard
-              todayEarnings={todayEarnings}
-              weekEarnings={weekEarnings}
-              monthEarnings={monthEarnings}
-              exchangeRate={settings.exchangeRate}
-              currencyCode={settings.currencyCode}
-            />
-          </div>
+          {/* Timer Tab - Main working area */}
+          <TabsContent value="timer" className="space-y-6 animate-fade-in">
+            {/* Timer and Earnings Hero */}
+            <section className="glass-card rounded-2xl p-6 md:p-8">
+              <div className="grid gap-8 md:grid-cols-2">
+                {/* Timer */}
+                <div className="flex flex-col items-center justify-center">
+                  <TimerDisplay 
+                    seconds={currentDuration} 
+                    isActive={isWorking} 
+                    isPaused={isPaused}
+                  />
+                </div>
 
-          {/* Settings */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            <SettingsCard settings={settings} onUpdate={updateSettings} />
-          </div>
+                {/* Earnings */}
+                <div className="flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-border pt-8 md:pt-0 md:pl-8">
+                  <EarningsDisplay
+                    usdAmount={currentEarnings}
+                    exchangeRate={settings.exchangeRate}
+                    currencyCode={settings.currencyCode}
+                    isActive={isWorking && !isPaused}
+                  />
+                </div>
+              </div>
 
-          {/* Chart */}
-          <div className="md:col-span-2 animate-fade-in" style={{ animationDelay: "0.25s" }}>
-            <EarningsChart data={chartData} />
-          </div>
+              {/* Controls */}
+              <div className="mt-8 pt-6 border-t border-border">
+                <TimerControls
+                  isWorking={isWorking}
+                  isPaused={isPaused}
+                  onStart={startWork}
+                  onStop={handleStop}
+                  onPause={pauseWork}
+                  onResume={resumeWork}
+                  onReset={resetSession}
+                />
+              </div>
+            </section>
 
-          {/* Schedule */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            <ScheduleCard schedule={schedule} onUpdate={updateSchedule} />
-          </div>
+            {/* Quick Stats */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <TotalsCard
+                todayEarnings={todayEarnings}
+                weekEarnings={weekEarnings}
+                monthEarnings={monthEarnings}
+                exchangeRate={settings.exchangeRate}
+                currencyCode={settings.currencyCode}
+              />
+              <NotesCard
+                onSaveNotes={(notes) => setSessionNotes(notes)}
+                isWorking={isWorking}
+              />
+            </div>
+          </TabsContent>
 
-          {/* Notes */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.35s" }}>
-            <NotesCard
-              onSaveNotes={(notes) => setSessionNotes(notes)}
-              isWorking={isWorking}
-            />
-          </div>
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6 animate-fade-in">
+            <EarningsChart sessions={sessions} />
+            
+            <div className="grid gap-6 md:grid-cols-2">
+              <TotalsCard
+                todayEarnings={todayEarnings}
+                weekEarnings={weekEarnings}
+                monthEarnings={monthEarnings}
+                exchangeRate={settings.exchangeRate}
+                currencyCode={settings.currencyCode}
+              />
+              <div className="glass-card rounded-xl p-6">
+                <h3 className="font-semibold text-foreground mb-4">Performance Insights</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+                    <span className="text-muted-foreground">Total Sessions</span>
+                    <span className="font-bold text-foreground">{sessions.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+                    <span className="text-muted-foreground">Total Hours</span>
+                    <span className="font-bold text-foreground">
+                      {(sessions.reduce((sum, s) => sum + s.duration, 0) / 3600).toFixed(1)}h
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+                    <span className="text-muted-foreground">Lifetime Earnings</span>
+                    <span className="font-bold text-accent">
+                      ${sessions.reduce((sum, s) => sum + s.earnings, 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+                    <span className="text-muted-foreground">Avg. Session</span>
+                    <span className="font-bold text-foreground">
+                      {sessions.length > 0 
+                        ? `${Math.round(sessions.reduce((sum, s) => sum + s.duration, 0) / sessions.length / 60)}m`
+                        : "0m"
+                      }
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
 
-          {/* Logs */}
-          <div className="md:col-span-2 lg:col-span-1 animate-fade-in" style={{ animationDelay: "0.4s" }}>
+          {/* Logs Tab */}
+          <TabsContent value="logs" className="space-y-6 animate-fade-in">
             <SessionLogsCard sessions={sessions} onClearLogs={clearLogs} />
-          </div>
-
-          {/* Export/Import */}
-          <div className="animate-fade-in" style={{ animationDelay: "0.45s" }}>
             <ExportImportCard
               onExportJSON={exportJSON}
               onExportCSV={exportCSV}
               onImportJSON={importJSON}
             />
-          </div>
-        </div>
+          </TabsContent>
+
+          {/* Schedule Tab */}
+          <TabsContent value="schedule" className="animate-fade-in">
+            <ScheduleCard schedule={schedule} onUpdate={updateSchedule} />
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6 animate-fade-in">
+            <SettingsCard settings={settings} onUpdate={updateSettings} />
+            <ExportImportCard
+              onExportJSON={exportJSON}
+              onExportCSV={exportCSV}
+              onImportJSON={importJSON}
+            />
+          </TabsContent>
+        </Tabs>
 
         {/* Footer */}
         <footer className="mt-8 pt-6 border-t border-border text-center text-sm text-muted-foreground">
-          <p>Data is automatically saved to your browser&apos;s local storage.</p>
-          <p className="mt-1">Export regularly to keep your data safe!</p>
+          <p>✅ Data is automatically saved to your browser. Close and reopen anytime!</p>
         </footer>
       </main>
     </div>
