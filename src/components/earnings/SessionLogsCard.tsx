@@ -1,9 +1,9 @@
-// Session logs with collapsible entries
+// Session logs with collapsible entries and break tracking
 import { memo, useState } from "react";
-import { History, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Trash2 } from "lucide-react";
+import { History, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Trash2, Coffee, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { WorkSession } from "@/types/earnings";
+import { WorkSession, BreakSession } from "@/types/earnings";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -37,11 +37,36 @@ const formatDuration = (seconds: number): string => {
   return `${secs}s`;
 };
 
+// Break entry component
+const BreakEntry = memo(({ breakSession }: { breakSession: BreakSession }) => {
+  const isLunch = breakSession.type === "lunch";
+  
+  return (
+    <div className="flex items-center gap-2 p-2 rounded-md bg-warning/5 border border-warning/10">
+      {isLunch ? (
+        <UtensilsCrossed className="w-3 h-3 text-warning" />
+      ) : (
+        <Coffee className="w-3 h-3 text-primary" />
+      )}
+      <span className="text-xs text-muted-foreground">
+        {isLunch ? "Lunch" : "Short"} break: {formatDuration(breakSession.duration)}
+      </span>
+      <span className="text-xs text-muted-foreground/70 ml-auto">
+        {new Date(breakSession.startTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+      </span>
+    </div>
+  );
+});
+
+BreakEntry.displayName = "BreakEntry";
+
 // Single log entry
 const LogEntry = memo(({ session }: { session: WorkSession }) => {
   const [expanded, setExpanded] = useState(false);
   const startDate = new Date(session.startTime);
   const endDate = session.endTime ? new Date(session.endTime) : null;
+  const breakCount = session.breaks?.length || 0;
+  const totalBreakTime = session.breaks?.reduce((sum, b) => sum + b.duration, 0) || 0;
 
   return (
     <div
@@ -74,6 +99,9 @@ const LogEntry = memo(({ session }: { session: WorkSession }) => {
                   {endDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                 </>
               )}
+              {breakCount > 0 && (
+                <span className="ml-2 text-warning">• {breakCount} break{breakCount > 1 ? 's' : ''}</span>
+              )}
             </p>
           </div>
         </div>
@@ -91,14 +119,31 @@ const LogEntry = memo(({ session }: { session: WorkSession }) => {
         <div className="px-3 pb-3 pt-1 space-y-2 animate-fade-in">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="w-3.5 h-3.5" />
-            <span>Duration: {formatDuration(session.duration)}</span>
+            <span>Work Time: {formatDuration(session.duration)}</span>
           </div>
+          {totalBreakTime > 0 && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Coffee className="w-3.5 h-3.5" />
+              <span>Break Time: {formatDuration(totalBreakTime)}</span>
+            </div>
+          )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <DollarSign className="w-3.5 h-3.5" />
             <span>Earned: ${session.earnings.toFixed(4)}</span>
           </div>
+          
+          {/* Break details */}
+          {session.breaks && session.breaks.length > 0 && (
+            <div className="mt-2 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Breaks taken:</p>
+              {session.breaks.map((breakSession) => (
+                <BreakEntry key={breakSession.id} breakSession={breakSession} />
+              ))}
+            </div>
+          )}
+
           {session.notes && (
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <div className="flex items-start gap-2 text-sm text-muted-foreground mt-2">
               <FileText className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
               <span>{session.notes}</span>
             </div>

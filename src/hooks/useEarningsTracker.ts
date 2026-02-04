@@ -3,11 +3,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   AppState,
   WorkSession,
-  DailyLog,
+  BreakSession,
+  BreakType,
+  DailyBreakUsage,
   Settings,
   ScheduleEntry,
   DEFAULT_SETTINGS,
   DEFAULT_SCHEDULE,
+  DEFAULT_BREAK_USAGE,
+  BREAK_DURATIONS,
 } from "@/types/earnings";
 import { toast } from "@/hooks/use-toast";
 
@@ -59,28 +63,50 @@ const saveState = (state: AppState): void => {
   }
 };
 
+// Check if we need to reset daily break usage
+const checkDailyReset = (saved: AppState): DailyBreakUsage => {
+  const today = getTodayDate();
+  const lastSession = saved.sessions[saved.sessions.length - 1];
+  if (lastSession && lastSession.date !== today) {
+    return DEFAULT_BREAK_USAGE;
+  }
+  return saved.dailyBreakUsage || DEFAULT_BREAK_USAGE;
+};
+
 const getInitialState = (): AppState => {
   const saved = loadState();
   if (saved) {
-    // Reset daily stats if it's a new day
     const today = getTodayDate();
     const todayLog = saved.dailyLogs.find((log) => log.date === today);
     
     return {
       ...saved,
-      isWorking: false, // Always start stopped
+      isWorking: false,
       isPaused: false,
+      isOnBreak: false,
+      currentBreakType: null,
+      currentBreakStart: null,
+      currentSessionBreaks: [],
       currentSessionStart: null,
-      currentSessionDuration: saved.currentSessionDuration || 0, // Preserve duration
+      currentSessionDuration: saved.currentSessionDuration || 0,
       accumulatedDuration: saved.accumulatedDuration || 0,
       totalEarningsToday: todayLog?.totalEarnings || 0,
       loginTime: saved.loginTime || Date.now(),
+      dailyBreakUsage: checkDailyReset(saved),
+      schedule: saved.schedule?.map(s => ({
+        ...s,
+        dailyGoal: s.dailyGoal ?? saved.settings.dailyGoal ?? 100
+      })) || DEFAULT_SCHEDULE,
     };
   }
 
   return {
     isWorking: false,
     isPaused: false,
+    isOnBreak: false,
+    currentBreakType: null,
+    currentBreakStart: null,
+    currentSessionBreaks: [],
     currentSessionStart: null,
     currentSessionDuration: 0,
     accumulatedDuration: 0,
@@ -91,13 +117,23 @@ const getInitialState = (): AppState => {
     settings: DEFAULT_SETTINGS,
     lastMilestone: 0,
     loginTime: Date.now(),
+    dailyBreakUsage: DEFAULT_BREAK_USAGE,
   };
 };
 
 export const useEarningsTracker = () => {
   const [state, setState] = useState<AppState>(getInitialState);
+  const [breakDuration, setBreakDuration] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const breakIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const saveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Get today's daily goal from schedule
+  const getTodayGoal = useCallback((): number => {
+    const today = new Date().getDay();
+    const todaySchedule = state.schedule.find(s => s.dayOfWeek === today);
+    return todaySchedule?.dailyGoal ?? state.settings.dailyGoal;
+  }, [state.schedule, state.settings.dailyGoal]);
 
   // Calculate current earnings in real-time
   const calculateCurrentEarnings = useCallback((): number => {
@@ -152,9 +188,9 @@ export const useEarningsTracker = () => {
     [state.lastMilestone, state.settings.notifications]
   );
 
-  // Timer tick - only runs when working AND not paused
+  // Timer tick - only runs when working AND not paused AND not on break
   useEffect(() => {
-    if (state.isWorking && !state.isPaused && state.currentSessionStart) {
+    if (state.isWorking && !state.isPaused && !state.isOnBreak && state.currentSessionStart) {
       intervalRef.current = setInterval(() => {
         setState((prev) => {
           const elapsed = Math.floor((Date.now() - prev.currentSessionStart!) / 1000);
@@ -163,7 +199,7 @@ export const useEarningsTracker = () => {
             currentSessionDuration: prev.accumulatedDuration + elapsed 
           };
         });
-      }, 100); // Update every 100ms for smooth animation
+      }, 100);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -176,7 +212,29 @@ export const useEarningsTracker = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [state.isWorking, state.isPaused, state.currentSessionStart]);
+  }, [state.isWorking, state.isPaused, state.isOnBreak, state.currentSessionStart]);
+
+  // Break timer
+  useEffect(() => {
+    if (state.isOnBreak && state.currentBreakStart) {
+      breakIntervalRef.current = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - state.currentBreakStart!) / 1000);
+        setBreakDuration(elapsed);
+      }, 100);
+    } else {
+      if (breakIntervalRef.current) {
+        clearInterval(breakIntervalRef.current);
+        breakIntervalRef.current = null;
+      }
+      setBreakDuration(0);
+    }
+
+    return () => {
+      if (breakIntervalRef.current) {
+        clearInterval(breakIntervalRef.current);
+      }
+    };
+  }, [state.isOnBreak, state.currentBreakStart]);
 
   // Auto-save every second
   useEffect(() => {
@@ -194,7 +252,7 @@ export const useEarningsTracker = () => {
   // Save immediately on critical changes
   useEffect(() => {
     saveState(state);
-  }, [state.isWorking, state.isPaused, state.currentSessionDuration, state.sessions]);
+  }, [state.isWorking, state.isPaused, state.isOnBreak, state.currentSessionDuration, state.sessions]);
 
   // Check milestones on earnings change
   useEffect(() => {
@@ -208,6 +266,10 @@ export const useEarningsTracker = () => {
       ...prev,
       isWorking: true,
       isPaused: false,
+      isOnBreak: false,
+      currentBreakType: null,
+      currentBreakStart: null,
+      currentSessionBreaks: [],
       currentSessionStart: Date.now(),
       currentSessionDuration: 0,
       accumulatedDuration: 0,
@@ -219,9 +281,91 @@ export const useEarningsTracker = () => {
     });
   }, []);
 
-  // Pause (take a break)
+  // Start a break
+  const startBreak = useCallback((type: BreakType) => {
+    if (!state.isWorking) return;
+
+    // Validate break availability
+    if (type === "lunch" && state.dailyBreakUsage.lunchUsed) {
+      toast({
+        title: "❌ Break Unavailable",
+        description: "You've already used your lunch break today.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (type === "short" && state.dailyBreakUsage.shortBreaksUsed >= 2) {
+      toast({
+        title: "❌ Break Unavailable",
+        description: "You've used all your short breaks today.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      isOnBreak: true,
+      currentBreakType: type,
+      currentBreakStart: Date.now(),
+      accumulatedDuration: prev.currentSessionDuration,
+      currentSessionStart: null,
+    }));
+
+    const breakName = type === "lunch" ? "Lunch Break" : "Short Break";
+    const duration = type === "lunch" ? "30" : "15";
+
+    toast({
+      title: `🍽️ ${breakName} Started`,
+      description: `Taking a ${duration}-minute break. Enjoy!`,
+    });
+  }, [state.isWorking, state.dailyBreakUsage]);
+
+  // End break and resume work
+  const endBreak = useCallback(() => {
+    if (!state.isOnBreak || !state.currentBreakType) return;
+
+    const breakEnd = Date.now();
+    const breakDur = Math.floor((breakEnd - state.currentBreakStart!) / 1000);
+
+    const newBreak: BreakSession = {
+      id: generateId(),
+      type: state.currentBreakType,
+      startTime: state.currentBreakStart!,
+      endTime: breakEnd,
+      duration: breakDur,
+      date: getTodayDate(),
+    };
+
+    setState((prev) => {
+      const newBreakUsage = { ...prev.dailyBreakUsage };
+      if (prev.currentBreakType === "lunch") {
+        newBreakUsage.lunchUsed = true;
+      } else if (prev.currentBreakType === "short") {
+        newBreakUsage.shortBreaksUsed = Math.min(newBreakUsage.shortBreaksUsed + 1, 2);
+      }
+
+      return {
+        ...prev,
+        isOnBreak: false,
+        currentBreakType: null,
+        currentBreakStart: null,
+        currentSessionBreaks: [...prev.currentSessionBreaks, newBreak],
+        currentSessionStart: Date.now(),
+        dailyBreakUsage: newBreakUsage,
+      };
+    });
+
+    toast({
+      title: "⏱️ Back to Work",
+      description: `Break logged (${Math.floor(breakDur / 60)}m ${breakDur % 60}s). Let's go!`,
+    });
+  }, [state.isOnBreak, state.currentBreakType, state.currentBreakStart]);
+
+  // Pause (legacy - quick pause without using break quota)
   const pauseWork = useCallback(() => {
-    if (!state.isWorking || state.isPaused) return;
+    if (!state.isWorking || state.isPaused || state.isOnBreak) return;
 
     setState((prev) => ({
       ...prev,
@@ -231,10 +375,10 @@ export const useEarningsTracker = () => {
     }));
 
     toast({
-      title: "☕ Break Time",
-      description: "Timer paused. Take your time!",
+      title: "☕ Paused",
+      description: "Timer paused. This won't use your break quota.",
     });
-  }, [state.isWorking, state.isPaused]);
+  }, [state.isWorking, state.isPaused, state.isOnBreak]);
 
   // Resume from pause
   const resumeWork = useCallback(() => {
@@ -247,15 +391,21 @@ export const useEarningsTracker = () => {
     }));
 
     toast({
-      title: "⏱️ Back to Work",
-      description: "Timer resumed. Let's go!",
+      title: "⏱️ Resumed",
+      description: "Timer resumed. Let's continue!",
     });
   }, [state.isPaused]);
 
   // Stop working
   const stopWork = useCallback(
     (notes: string = "") => {
-      if (!state.isWorking && !state.isPaused) return;
+      if (!state.isWorking && !state.isPaused && !state.isOnBreak) return;
+      
+      // If on break, end it first
+      if (state.isOnBreak) {
+        endBreak();
+      }
+
       if (state.currentSessionDuration === 0) {
         resetSession();
         return;
@@ -274,12 +424,17 @@ export const useEarningsTracker = () => {
         earnings,
         notes,
         date: today,
+        breaks: state.currentSessionBreaks,
       };
 
       setState((prev) => ({
         ...prev,
         isWorking: false,
         isPaused: false,
+        isOnBreak: false,
+        currentBreakType: null,
+        currentBreakStart: null,
+        currentSessionBreaks: [],
         currentSessionStart: null,
         currentSessionDuration: 0,
         accumulatedDuration: 0,
@@ -291,7 +446,7 @@ export const useEarningsTracker = () => {
         description: `Earned $${earnings.toFixed(2)} in ${Math.floor(duration / 60)}m ${duration % 60}s`,
       });
     },
-    [state.isWorking, state.isPaused, state.currentSessionDuration, state.settings.hourlyRate]
+    [state.isWorking, state.isPaused, state.isOnBreak, state.currentSessionDuration, state.currentSessionBreaks, state.settings.hourlyRate, endBreak]
   );
 
   // Reset current session
@@ -300,6 +455,10 @@ export const useEarningsTracker = () => {
       ...prev,
       isWorking: false,
       isPaused: false,
+      isOnBreak: false,
+      currentBreakType: null,
+      currentBreakStart: null,
+      currentSessionBreaks: [],
       currentSessionStart: null,
       currentSessionDuration: 0,
       accumulatedDuration: 0,
@@ -343,13 +502,14 @@ export const useEarningsTracker = () => {
 
   // Export data as CSV
   const exportCSV = useCallback(() => {
-    const headers = ["Date", "Start Time", "End Time", "Duration (min)", "Earnings (USD)", "Notes"];
+    const headers = ["Date", "Start Time", "End Time", "Duration (min)", "Earnings (USD)", "Breaks", "Notes"];
     const rows = state.sessions.map((s) => [
       s.date,
       new Date(s.startTime).toLocaleTimeString(),
       s.endTime ? new Date(s.endTime).toLocaleTimeString() : "",
       (s.duration / 60).toFixed(2),
       s.earnings.toFixed(2),
+      s.breaks?.length || 0,
       `"${s.notes.replace(/"/g, '""')}"`,
     ]);
 
@@ -374,6 +534,17 @@ export const useEarningsTracker = () => {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
+        // Ensure new fields exist
+        data.isOnBreak = data.isOnBreak ?? false;
+        data.currentBreakType = data.currentBreakType ?? null;
+        data.currentBreakStart = data.currentBreakStart ?? null;
+        data.currentSessionBreaks = data.currentSessionBreaks ?? [];
+        data.dailyBreakUsage = data.dailyBreakUsage ?? DEFAULT_BREAK_USAGE;
+        data.schedule = data.schedule?.map((s: ScheduleEntry) => ({
+          ...s,
+          dailyGoal: s.dailyGoal ?? data.settings?.dailyGoal ?? 100
+        })) ?? DEFAULT_SCHEDULE;
+        
         setState(data);
         saveState(data);
 
@@ -399,6 +570,7 @@ export const useEarningsTracker = () => {
       sessions: [],
       dailyLogs: [],
       lastMilestone: 0,
+      dailyBreakUsage: DEFAULT_BREAK_USAGE,
     }));
 
     toast({
@@ -432,15 +604,22 @@ export const useEarningsTracker = () => {
     state,
     isWorking: state.isWorking,
     isPaused: state.isPaused,
+    isOnBreak: state.isOnBreak,
+    currentBreakType: state.currentBreakType,
+    breakDuration,
+    dailyBreakUsage: state.dailyBreakUsage,
     currentDuration: state.currentSessionDuration,
     currentEarnings: calculateCurrentEarnings(),
     todayEarnings: calculateTodayEarnings(),
     weekEarnings: calculateWeekEarnings(),
     monthEarnings: calculateMonthEarnings(),
+    todayGoal: getTodayGoal(),
     settings: state.settings,
     sessions: state.sessions,
     schedule: state.schedule,
     startWork,
+    startBreak,
+    endBreak,
     pauseWork,
     resumeWork,
     stopWork,
