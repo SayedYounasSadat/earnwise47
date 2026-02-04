@@ -15,6 +15,7 @@ import { NotesCard } from "./NotesCard";
 import { EarningsChart } from "./EarningsChart";
 import { ExportImportCard } from "./ExportImportCard";
 import { ScheduleCard } from "./ScheduleCard";
+import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar } from "lucide-react";
 
 export const Dashboard = () => {
@@ -219,6 +220,14 @@ export const Dashboard = () => {
             <ExportImportCard
               onExportJSON={exportJSON}
               onExportCSV={exportCSV}
+              onExportPDF={() => generatePDFReport({
+                sessions,
+                settings,
+                schedule,
+                todayEarnings,
+                weekEarnings,
+                monthEarnings,
+              })}
               onImportJSON={importJSON}
             />
           </TabsContent>
@@ -234,6 +243,14 @@ export const Dashboard = () => {
             <ExportImportCard
               onExportJSON={exportJSON}
               onExportCSV={exportCSV}
+              onExportPDF={() => generatePDFReport({
+                sessions,
+                settings,
+                schedule,
+                todayEarnings,
+                weekEarnings,
+                monthEarnings,
+              })}
               onImportJSON={importJSON}
             />
           </TabsContent>

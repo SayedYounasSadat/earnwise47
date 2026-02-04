@@ -1,16 +1,17 @@
 // Export/Import functionality card
 import { memo, useRef } from "react";
-import { Download, Upload, FileJson, FileSpreadsheet } from "lucide-react";
+import { Download, Upload, FileJson, FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ExportImportCardProps {
   onExportJSON: () => void;
   onExportCSV: () => void;
+  onExportPDF: () => void;
   onImportJSON: (file: File) => void;
 }
 
 export const ExportImportCard = memo(
-  ({ onExportJSON, onExportCSV, onImportJSON }: ExportImportCardProps) => {
+  ({ onExportJSON, onExportCSV, onExportPDF, onImportJSON }: ExportImportCardProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,7 +46,7 @@ export const ExportImportCard = memo(
                 className="flex items-center gap-2"
               >
                 <FileJson className="w-4 h-4" />
-                Export JSON
+                JSON
               </Button>
               <Button
                 onClick={onExportCSV}
@@ -54,7 +55,16 @@ export const ExportImportCard = memo(
                 className="flex items-center gap-2"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                Export CSV
+                CSV
+              </Button>
+              <Button
+                onClick={onExportPDF}
+                variant="default"
+                size="sm"
+                className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground"
+              >
+                <FileText className="w-4 h-4" />
+                PDF Report
               </Button>
             </div>
           </div>
