@@ -6,6 +6,7 @@ import { Header } from "./Header";
 import { TimerDisplay } from "./TimerDisplay";
 import { EarningsDisplay } from "./EarningsDisplay";
 import { TimerControls } from "./TimerControls";
+import { BreakControls } from "./BreakControls";
 import { ProgressCard } from "./ProgressCard";
 import { TotalsCard } from "./TotalsCard";
 import { SettingsCard } from "./SettingsCard";
@@ -20,15 +21,22 @@ export const Dashboard = () => {
   const {
     isWorking,
     isPaused,
+    isOnBreak,
+    currentBreakType,
+    breakDuration,
+    dailyBreakUsage,
     currentDuration,
     currentEarnings,
     todayEarnings,
     weekEarnings,
     monthEarnings,
+    todayGoal,
     settings,
     sessions,
     schedule,
     startWork,
+    startBreak,
+    endBreak,
     pauseWork,
     resumeWork,
     stopWork,
@@ -60,8 +68,8 @@ export const Dashboard = () => {
         <section className="mb-6 animate-fade-in">
           <ProgressCard 
             currentEarnings={todayEarnings} 
-            dailyGoal={settings.dailyGoal}
-            isWorking={isWorking && !isPaused}
+            dailyGoal={todayGoal}
+            isWorking={isWorking && !isPaused && !isOnBreak}
           />
         </section>
 
@@ -120,6 +128,7 @@ export const Dashboard = () => {
                 <TimerControls
                   isWorking={isWorking}
                   isPaused={isPaused}
+                  isOnBreak={isOnBreak}
                   onStart={startWork}
                   onStop={handleStop}
                   onPause={pauseWork}
@@ -127,6 +136,20 @@ export const Dashboard = () => {
                   onReset={resetSession}
                 />
               </div>
+
+              {/* Break Controls - show when working */}
+              {isWorking && (
+                <div className="mt-6">
+                  <BreakControls
+                    isOnBreak={isOnBreak}
+                    currentBreakType={currentBreakType}
+                    breakDuration={breakDuration}
+                    breakUsage={dailyBreakUsage}
+                    onStartBreak={startBreak}
+                    onEndBreak={endBreak}
+                  />
+                </div>
+              )}
             </section>
 
             {/* Quick Stats */}

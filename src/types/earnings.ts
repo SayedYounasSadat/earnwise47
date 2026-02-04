@@ -1,5 +1,16 @@
 // Earnings Tracker Type Definitions
 
+export type BreakType = "lunch" | "short" | "custom";
+
+export interface BreakSession {
+  id: string;
+  type: BreakType;
+  startTime: number;
+  endTime: number | null;
+  duration: number; // in seconds
+  date: string;
+}
+
 export interface WorkSession {
   id: string;
   startTime: number;
@@ -8,6 +19,12 @@ export interface WorkSession {
   earnings: number; // in USD
   notes: string;
   date: string; // YYYY-MM-DD format
+  breaks: BreakSession[]; // breaks taken during this session
+}
+
+export interface DailyBreakUsage {
+  lunchUsed: boolean; // 1x 30-min
+  shortBreaksUsed: number; // max 2x 15-min
 }
 
 export interface DailyLog {
@@ -17,6 +34,7 @@ export interface DailyLog {
   totalEarnings: number;
   loginTime: number | null;
   logoutTime: number | null;
+  breakUsage: DailyBreakUsage;
 }
 
 export interface ScheduleEntry {
@@ -25,13 +43,14 @@ export interface ScheduleEntry {
   startTime: string; // HH:MM format
   endTime: string; // HH:MM format
   enabled: boolean;
+  dailyGoal: number; // Individual daily goal in USD
 }
 
 export interface Settings {
   hourlyRate: number;
   exchangeRate: number; // 1 USD = X AFN
   currencyCode: string;
-  dailyGoal: number; // in USD
+  dailyGoal: number; // Default daily goal in USD
   darkMode: boolean;
   notifications: boolean;
 }
@@ -39,6 +58,10 @@ export interface Settings {
 export interface AppState {
   isWorking: boolean;
   isPaused: boolean;
+  isOnBreak: boolean;
+  currentBreakType: BreakType | null;
+  currentBreakStart: number | null;
+  currentSessionBreaks: BreakSession[];
   currentSessionStart: number | null;
   currentSessionDuration: number;
   accumulatedDuration: number; // Duration accumulated before pause
@@ -49,6 +72,7 @@ export interface AppState {
   settings: Settings;
   lastMilestone: number;
   loginTime: number | null;
+  dailyBreakUsage: DailyBreakUsage;
 }
 
 export interface ChartDataPoint {
@@ -68,11 +92,21 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const DEFAULT_SCHEDULE: ScheduleEntry[] = [
-  { id: "1", dayOfWeek: 1, startTime: "09:00", endTime: "17:00", enabled: true },
-  { id: "2", dayOfWeek: 2, startTime: "09:00", endTime: "17:00", enabled: true },
-  { id: "3", dayOfWeek: 3, startTime: "09:00", endTime: "17:00", enabled: true },
-  { id: "4", dayOfWeek: 4, startTime: "09:00", endTime: "17:00", enabled: true },
-  { id: "5", dayOfWeek: 5, startTime: "09:00", endTime: "17:00", enabled: true },
-  { id: "6", dayOfWeek: 6, startTime: "09:00", endTime: "13:00", enabled: false },
-  { id: "0", dayOfWeek: 0, startTime: "09:00", endTime: "13:00", enabled: false },
+  { id: "1", dayOfWeek: 1, startTime: "09:00", endTime: "17:00", enabled: true, dailyGoal: 100 },
+  { id: "2", dayOfWeek: 2, startTime: "09:00", endTime: "17:00", enabled: true, dailyGoal: 100 },
+  { id: "3", dayOfWeek: 3, startTime: "09:00", endTime: "17:00", enabled: true, dailyGoal: 100 },
+  { id: "4", dayOfWeek: 4, startTime: "09:00", endTime: "17:00", enabled: true, dailyGoal: 100 },
+  { id: "5", dayOfWeek: 5, startTime: "09:00", endTime: "17:00", enabled: true, dailyGoal: 100 },
+  { id: "6", dayOfWeek: 6, startTime: "09:00", endTime: "13:00", enabled: false, dailyGoal: 50 },
+  { id: "0", dayOfWeek: 0, startTime: "09:00", endTime: "13:00", enabled: false, dailyGoal: 50 },
 ];
+
+export const DEFAULT_BREAK_USAGE: DailyBreakUsage = {
+  lunchUsed: false,
+  shortBreaksUsed: 0,
+};
+
+export const BREAK_DURATIONS = {
+  lunch: 30 * 60, // 30 minutes in seconds
+  short: 15 * 60, // 15 minutes in seconds
+} as const;
