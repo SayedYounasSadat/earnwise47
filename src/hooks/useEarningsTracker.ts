@@ -14,6 +14,7 @@ import {
   BREAK_DURATIONS,
 } from "@/types/earnings";
 import { toast } from "@/hooks/use-toast";
+import { loadUserData, saveUserData } from "@/services/firestoreSync";
 
 const STORAGE_KEY = "earnings-tracker-data";
 
@@ -55,7 +56,7 @@ const loadState = (): AppState | null => {
 };
 
 // Save state to localStorage
-const saveState = (state: AppState): void => {
+const saveStateLocal = (state: AppState): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
@@ -73,34 +74,12 @@ const checkDailyReset = (saved: AppState): DailyBreakUsage => {
   return saved.dailyBreakUsage || DEFAULT_BREAK_USAGE;
 };
 
-const getInitialState = (): AppState => {
-  const saved = loadState();
-  if (saved) {
-    const today = getTodayDate();
-    const todayLog = saved.dailyLogs.find((log) => log.date === today);
-    
-    return {
-      ...saved,
-      isWorking: false,
-      isPaused: false,
-      isOnBreak: false,
-      currentBreakType: null,
-      currentBreakStart: null,
-      currentSessionBreaks: [],
-      currentSessionStart: null,
-      currentSessionDuration: saved.currentSessionDuration || 0,
-      accumulatedDuration: saved.accumulatedDuration || 0,
-      totalEarningsToday: todayLog?.totalEarnings || 0,
-      loginTime: saved.loginTime || Date.now(),
-      dailyBreakUsage: checkDailyReset(saved),
-      schedule: saved.schedule?.map(s => ({
-        ...s,
-        dailyGoal: s.dailyGoal ?? saved.settings.dailyGoal ?? 100
-      })) || DEFAULT_SCHEDULE,
-    };
-  }
-
+const buildStateFromSaved = (saved: AppState): AppState => {
+  const today = getTodayDate();
+  const todayLog = saved.dailyLogs.find((log) => log.date === today);
+  
   return {
+    ...saved,
     isWorking: false,
     isPaused: false,
     isOnBreak: false,
@@ -108,25 +87,102 @@ const getInitialState = (): AppState => {
     currentBreakStart: null,
     currentSessionBreaks: [],
     currentSessionStart: null,
-    currentSessionDuration: 0,
-    accumulatedDuration: 0,
-    totalEarningsToday: 0,
-    sessions: [],
-    dailyLogs: [],
-    schedule: DEFAULT_SCHEDULE,
-    settings: DEFAULT_SETTINGS,
-    lastMilestone: 0,
-    loginTime: Date.now(),
-    dailyBreakUsage: DEFAULT_BREAK_USAGE,
+    currentSessionDuration: saved.currentSessionDuration || 0,
+    accumulatedDuration: saved.accumulatedDuration || 0,
+    totalEarningsToday: todayLog?.totalEarnings || 0,
+    loginTime: saved.loginTime || Date.now(),
+    dailyBreakUsage: checkDailyReset(saved),
+    schedule: saved.schedule?.map(s => ({
+      ...s,
+      dailyGoal: s.dailyGoal ?? saved.settings.dailyGoal ?? 100
+    })) || DEFAULT_SCHEDULE,
   };
 };
 
-export const useEarningsTracker = () => {
+const getDefaultState = (): AppState => ({
+  isWorking: false,
+  isPaused: false,
+  isOnBreak: false,
+  currentBreakType: null,
+  currentBreakStart: null,
+  currentSessionBreaks: [],
+  currentSessionStart: null,
+  currentSessionDuration: 0,
+  accumulatedDuration: 0,
+  totalEarningsToday: 0,
+  sessions: [],
+  dailyLogs: [],
+  schedule: DEFAULT_SCHEDULE,
+  settings: DEFAULT_SETTINGS,
+  lastMilestone: 0,
+  loginTime: Date.now(),
+  dailyBreakUsage: DEFAULT_BREAK_USAGE,
+});
+
+const getInitialState = (): AppState => {
+  const saved = loadState();
+  if (saved) {
+    return buildStateFromSaved(saved);
+  }
+  return getDefaultState();
+};
+
+export const useEarningsTracker = (userId?: string | null) => {
   const [state, setState] = useState<AppState>(getInitialState);
   const [breakDuration, setBreakDuration] = useState(0);
+  const [cloudLoaded, setCloudLoaded] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const breakIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const saveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cloudSaveRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load data from Firestore when user logs in
+  useEffect(() => {
+    if (!userId) {
+      setCloudLoaded(false);
+      return;
+    }
+
+    const loadCloud = async () => {
+      const cloudData = await loadUserData(userId);
+      if (cloudData) {
+        const restored = buildStateFromSaved(cloudData);
+        setState(restored);
+        saveStateLocal(restored);
+        toast({
+          title: "☁️ Data Synced",
+          description: "Your data has been loaded from the cloud.",
+        });
+      } else {
+        // First login - push local data to cloud
+        const localData = loadState();
+        if (localData && localData.sessions.length > 0) {
+          await saveUserData(userId, localData);
+          toast({
+            title: "☁️ Data Uploaded",
+            description: "Your local data has been saved to the cloud.",
+          });
+        }
+      }
+      setCloudLoaded(true);
+    };
+
+    loadCloud();
+  }, [userId]);
+
+  // Debounced cloud save - saves to Firestore every 5 seconds when logged in
+  useEffect(() => {
+    if (!userId || !cloudLoaded) return;
+
+    if (cloudSaveRef.current) clearTimeout(cloudSaveRef.current);
+    cloudSaveRef.current = setTimeout(() => {
+      saveUserData(userId, state);
+    }, 5000);
+
+    return () => {
+      if (cloudSaveRef.current) clearTimeout(cloudSaveRef.current);
+    };
+  }, [userId, cloudLoaded, state]);
 
   // Get today's daily goal from schedule
   const getTodayGoal = useCallback((): number => {
@@ -236,10 +292,10 @@ export const useEarningsTracker = () => {
     };
   }, [state.isOnBreak, state.currentBreakStart]);
 
-  // Auto-save every second
+  // Auto-save to localStorage every second
   useEffect(() => {
     saveIntervalRef.current = setInterval(() => {
-      saveState(state);
+      saveStateLocal(state);
     }, 1000);
 
     return () => {
@@ -251,7 +307,7 @@ export const useEarningsTracker = () => {
 
   // Save immediately on critical changes
   useEffect(() => {
-    saveState(state);
+    saveStateLocal(state);
   }, [state.isWorking, state.isPaused, state.isOnBreak, state.currentSessionDuration, state.sessions]);
 
   // Check milestones on earnings change
@@ -285,7 +341,6 @@ export const useEarningsTracker = () => {
   const startBreak = useCallback((type: BreakType) => {
     if (!state.isWorking) return;
 
-    // Validate break availability
     if (type === "lunch" && state.dailyBreakUsage.lunchUsed) {
       toast({
         title: "❌ Break Unavailable",
@@ -363,7 +418,7 @@ export const useEarningsTracker = () => {
     });
   }, [state.isOnBreak, state.currentBreakType, state.currentBreakStart]);
 
-  // Pause (legacy - quick pause without using break quota)
+  // Pause
   const pauseWork = useCallback(() => {
     if (!state.isWorking || state.isPaused || state.isOnBreak) return;
 
@@ -401,7 +456,6 @@ export const useEarningsTracker = () => {
     (notes: string = "") => {
       if (!state.isWorking && !state.isPaused && !state.isOnBreak) return;
       
-      // If on break, end it first
       if (state.isOnBreak) {
         endBreak();
       }
@@ -534,7 +588,6 @@ export const useEarningsTracker = () => {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        // Ensure new fields exist
         data.isOnBreak = data.isOnBreak ?? false;
         data.currentBreakType = data.currentBreakType ?? null;
         data.currentBreakStart = data.currentBreakStart ?? null;
@@ -546,7 +599,7 @@ export const useEarningsTracker = () => {
         })) ?? DEFAULT_SCHEDULE;
         
         setState(data);
-        saveState(data);
+        saveStateLocal(data);
 
         toast({
           title: "📥 Import Complete",
