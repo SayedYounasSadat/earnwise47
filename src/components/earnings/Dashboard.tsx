@@ -1,6 +1,7 @@
 // Main dashboard layout with tabs
 import { useState, useCallback } from "react";
 import { useEarningsTracker } from "@/hooks/useEarningsTracker";
+import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "./Header";
 import { TimerDisplay } from "./TimerDisplay";
@@ -19,6 +20,8 @@ import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar } from "lucide-react";
 
 export const Dashboard = () => {
+  const { user, logout } = useAuth();
+
   const {
     isWorking,
     isPaused,
@@ -49,7 +52,7 @@ export const Dashboard = () => {
     importJSON,
     clearLogs,
     toggleDarkMode,
-  } = useEarningsTracker();
+  } = useEarningsTracker(user?.uid);
 
   // Track notes for current session
   const [sessionNotes, setSessionNotes] = useState("");
@@ -62,7 +65,16 @@ export const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background theme-transition">
-      <Header isDarkMode={settings.darkMode} onToggleDarkMode={toggleDarkMode} />
+      <Header
+        isDarkMode={settings.darkMode}
+        onToggleDarkMode={toggleDarkMode}
+        user={user ? {
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+        } : null}
+        onLogout={logout}
+      />
 
       <main className="container py-4 md:py-6">
         {/* Hero Progress Bar - Always visible at top */}
@@ -258,7 +270,11 @@ export const Dashboard = () => {
 
         {/* Footer */}
         <footer className="mt-8 pt-6 border-t border-border text-center text-sm text-muted-foreground">
-          <p>✅ Data is automatically saved to your browser. Close and reopen anytime!</p>
+          <p>
+            {user 
+              ? "☁️ Data syncs automatically to your account across all devices." 
+              : "✅ Data is automatically saved to your browser. Close and reopen anytime!"}
+          </p>
         </footer>
       </main>
     </div>
