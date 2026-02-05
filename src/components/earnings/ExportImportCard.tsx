@@ -2,6 +2,7 @@
 import { memo, useRef } from "react";
 import { Download, Upload, FileJson, FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EmailPDFDialog } from "./EmailPDFDialog";
 
 interface ExportImportCardProps {
   onExportJSON: () => void;
@@ -66,9 +67,9 @@ export const ExportImportCard = memo(
                 <FileText className="w-4 h-4" />
                 PDF Report
               </Button>
+              <EmailPDFDialog onGeneratePDF={onExportPDF} />
             </div>
           </div>
-
           {/* Import section */}
           <div className="pt-4 border-t border-border">
             <p className="text-sm text-muted-foreground mb-3">
