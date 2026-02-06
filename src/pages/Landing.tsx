@@ -11,6 +11,7 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react";
+import dashboardPreview from "@/assets/dashboard-preview.png";
 
 const features = [
   {
@@ -107,6 +108,18 @@ const Landing = () => {
             >
               <Link to="/auth">I already have an account</Link>
             </Button>
+          </div>
+
+          {/* Dashboard Preview */}
+          <div className="pt-8 max-w-5xl mx-auto">
+            <div className="rounded-xl overflow-hidden shadow-2xl border border-border/50 ring-1 ring-border/20">
+              <img
+                src={dashboardPreview}
+                alt="EarnWise dashboard showing timer, earnings, and goal tracking"
+                className="w-full h-auto"
+                loading="lazy"
+              />
+            </div>
           </div>
         </div>
       </section>

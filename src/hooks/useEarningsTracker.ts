@@ -74,9 +74,60 @@ const checkDailyReset = (saved: AppState): DailyBreakUsage => {
   return saved.dailyBreakUsage || DEFAULT_BREAK_USAGE;
 };
 
-const buildStateFromSaved = (saved: AppState): AppState => {
+const buildStateFromSaved = (saved: AppState, restoreTimer: boolean = true): AppState => {
   const today = getTodayDate();
   const todayLog = saved.dailyLogs.find((log) => log.date === today);
+
+  // If the timer was running when the app was closed, restore it
+  const wasWorking = restoreTimer && saved.isWorking && !saved.isPaused && !saved.isOnBreak && saved.currentSessionStart;
+  const wasPaused = restoreTimer && saved.isWorking && saved.isPaused;
+
+  if (wasWorking && saved.currentSessionStart) {
+    // Timer was actively running - recalculate duration based on elapsed real time
+    const elapsed = Math.floor((Date.now() - saved.currentSessionStart) / 1000);
+    const totalDuration = (saved.accumulatedDuration || 0) + elapsed;
+
+    return {
+      ...saved,
+      isWorking: true,
+      isPaused: false,
+      isOnBreak: false,
+      currentBreakType: null,
+      currentBreakStart: null,
+      currentSessionStart: saved.currentSessionStart,
+      currentSessionDuration: totalDuration,
+      accumulatedDuration: saved.accumulatedDuration || 0,
+      totalEarningsToday: todayLog?.totalEarnings || 0,
+      loginTime: saved.loginTime || Date.now(),
+      dailyBreakUsage: checkDailyReset(saved),
+      schedule: saved.schedule?.map(s => ({
+        ...s,
+        dailyGoal: s.dailyGoal ?? saved.settings.dailyGoal ?? 100
+      })) || DEFAULT_SCHEDULE,
+    };
+  }
+
+  if (wasPaused) {
+    // Timer was paused - restore paused state with accumulated duration intact
+    return {
+      ...saved,
+      isWorking: true,
+      isPaused: true,
+      isOnBreak: false,
+      currentBreakType: null,
+      currentBreakStart: null,
+      currentSessionStart: null,
+      currentSessionDuration: saved.accumulatedDuration || saved.currentSessionDuration || 0,
+      accumulatedDuration: saved.accumulatedDuration || saved.currentSessionDuration || 0,
+      totalEarningsToday: todayLog?.totalEarnings || 0,
+      loginTime: saved.loginTime || Date.now(),
+      dailyBreakUsage: checkDailyReset(saved),
+      schedule: saved.schedule?.map(s => ({
+        ...s,
+        dailyGoal: s.dailyGoal ?? saved.settings.dailyGoal ?? 100
+      })) || DEFAULT_SCHEDULE,
+    };
+  }
   
   return {
     ...saved,
