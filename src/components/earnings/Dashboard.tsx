@@ -17,6 +17,10 @@ import { EarningsChart } from "./EarningsChart";
 import { ExportImportCard } from "./ExportImportCard";
 import { ScheduleCard } from "./ScheduleCard";
 import { ResetDataCard } from "./ResetDataCard";
+import { HeatmapCalendar } from "./HeatmapCalendar";
+import { EarningsProjections } from "./EarningsProjections";
+import { ComparisonCharts } from "./ComparisonCharts";
+import { PomodoroTimer } from "./PomodoroTimer";
 import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar } from "lucide-react";
 
@@ -167,7 +171,7 @@ export const Dashboard = () => {
               )}
             </section>
 
-            {/* Quick Stats */}
+            {/* Quick Stats + Pomodoro */}
             <div className="grid gap-6 md:grid-cols-2">
               <TotalsCard
                 todayEarnings={todayEarnings}
@@ -176,17 +180,35 @@ export const Dashboard = () => {
                 exchangeRate={settings.exchangeRate}
                 currencyCode={settings.currencyCode}
               />
-              <NotesCard
-                onSaveNotes={(notes) => setSessionNotes(notes)}
-                isWorking={isWorking}
+              <PomodoroTimer
+                isMainTimerRunning={isWorking && !isPaused && !isOnBreak}
+                onStartWork={startWork}
+                onPauseWork={pauseWork}
+                onResumeWork={resumeWork}
               />
             </div>
+
+            <NotesCard
+              onSaveNotes={(notes) => setSessionNotes(notes)}
+              isWorking={isWorking}
+            />
           </TabsContent>
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6 animate-fade-in">
             <EarningsChart sessions={sessions} />
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <EarningsProjections
+                sessions={sessions}
+                todayEarnings={todayEarnings}
+                todayGoal={todayGoal}
+              />
+              <ComparisonCharts sessions={sessions} />
+            </div>
             
+            <HeatmapCalendar sessions={sessions} />
+
             <div className="grid gap-6 md:grid-cols-2">
               <TotalsCard
                 todayEarnings={todayEarnings}
