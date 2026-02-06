@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Wallet, Mail, Lock, User, Loader2 } from "lucide-react";
 import { z } from "zod";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255),
@@ -20,6 +21,8 @@ const signupSchema = loginSchema.extend({
 
 const Auth = () => {
   const { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Login form state
@@ -42,7 +45,7 @@ const Auth = () => {
   }
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -142,7 +145,7 @@ const Auth = () => {
 
         {/* Email Auth Tabs */}
         <Card className="glass-card">
-          <Tabs defaultValue="login">
+          <Tabs defaultValue={defaultTab}>
             <CardHeader className="pb-4">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="login">Login</TabsTrigger>
@@ -190,10 +193,13 @@ const Auth = () => {
                       <p className="text-sm text-destructive">{loginErrors.password}</p>
                     )}
                   </div>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    Sign In
-                  </Button>
+                  <div className="flex items-center justify-between">
+                    <ForgotPasswordDialog />
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      Sign In
+                    </Button>
+                  </div>
                 </form>
               </TabsContent>
 
