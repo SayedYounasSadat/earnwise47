@@ -683,6 +683,23 @@ export const useEarningsTracker = (userId?: string | null) => {
     });
   }, []);
 
+  // Reset ALL data back to factory defaults
+  const resetAllData = useCallback(() => {
+    const freshState = getDefaultState();
+    setState(freshState);
+    saveStateLocal(freshState);
+
+    // Also wipe cloud data if user is logged in
+    if (userId) {
+      saveUserData(userId, freshState);
+    }
+
+    toast({
+      title: "🔄 All Data Reset",
+      description: "Everything has been reset to defaults.",
+    });
+  }, [userId]);
+
   // Toggle dark mode
   const toggleDarkMode = useCallback(() => {
     const newDarkMode = !state.settings.darkMode;
@@ -734,6 +751,7 @@ export const useEarningsTracker = (userId?: string | null) => {
     exportCSV,
     importJSON,
     clearLogs,
+    resetAllData,
     toggleDarkMode,
   };
 };

@@ -16,6 +16,7 @@ import { NotesCard } from "./NotesCard";
 import { EarningsChart } from "./EarningsChart";
 import { ExportImportCard } from "./ExportImportCard";
 import { ScheduleCard } from "./ScheduleCard";
+import { ResetDataCard } from "./ResetDataCard";
 import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar } from "lucide-react";
 
@@ -51,6 +52,7 @@ export const Dashboard = () => {
     exportCSV,
     importJSON,
     clearLogs,
+    resetAllData,
     toggleDarkMode,
   } = useEarningsTracker(user?.uid);
 
@@ -265,6 +267,7 @@ export const Dashboard = () => {
               })}
               onImportJSON={importJSON}
             />
+            <ResetDataCard onResetAll={resetAllData} onClearLogs={clearLogs} />
           </TabsContent>
         </Tabs>
 
