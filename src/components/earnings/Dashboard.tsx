@@ -58,6 +58,9 @@ export const Dashboard = () => {
     clearLogs,
     resetAllData,
     toggleDarkMode,
+    deleteSession,
+    updateSession,
+    addManualSession,
   } = useEarningsTracker(user?.uid);
 
   // Track notes for current session
@@ -252,7 +255,14 @@ export const Dashboard = () => {
 
           {/* Logs Tab */}
           <TabsContent value="logs" className="space-y-6 animate-fade-in">
-            <SessionLogsCard sessions={sessions} onClearLogs={clearLogs} />
+            <SessionLogsCard
+              sessions={sessions}
+              onClearLogs={clearLogs}
+              onDeleteSession={deleteSession}
+              onUpdateSession={updateSession}
+              onAddManualSession={addManualSession}
+              hourlyRate={settings.hourlyRate}
+            />
             <ExportImportCard
               onExportJSON={exportJSON}
               onExportCSV={exportCSV}
