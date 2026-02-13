@@ -667,6 +667,67 @@ export const useEarningsTracker = (userId?: string | null) => {
     reader.readAsText(file);
   }, []);
 
+  // Delete a single session by ID
+  const deleteSession = useCallback((id: string) => {
+    setState((prev) => ({
+      ...prev,
+      sessions: prev.sessions.filter((s) => s.id !== id),
+    }));
+    toast({
+      title: "🗑️ Session Deleted",
+      description: "The session has been removed.",
+    });
+  }, []);
+
+  // Update a session's fields and recalculate duration/earnings
+  const updateSession = useCallback((id: string, updates: Partial<Pick<WorkSession, 'startTime' | 'endTime' | 'notes' | 'project'>>) => {
+    setState((prev) => ({
+      ...prev,
+      sessions: prev.sessions.map((s) => {
+        if (s.id !== id) return s;
+        const updated = { ...s, ...updates };
+        if (updates.startTime !== undefined || updates.endTime !== undefined) {
+          const start = updates.startTime ?? s.startTime;
+          const end = updates.endTime ?? s.endTime;
+          if (start && end) {
+            updated.duration = Math.floor((end - start) / 1000);
+            updated.earnings = (updated.duration / 3600) * prev.settings.hourlyRate;
+          }
+        }
+        return updated;
+      }),
+    }));
+    toast({
+      title: "✏️ Session Updated",
+      description: "The session has been updated.",
+    });
+  }, []);
+
+  // Add a manual session
+  const addManualSession = useCallback((data: { date: string; startTime: number; endTime: number; notes: string; project: string }) => {
+    const duration = Math.floor((data.endTime - data.startTime) / 1000);
+    const earnings = (duration / 3600) * state.settings.hourlyRate;
+    const newSession: WorkSession = {
+      id: generateId(),
+      startTime: data.startTime,
+      endTime: data.endTime,
+      duration,
+      earnings,
+      notes: data.notes,
+      date: data.date,
+      breaks: [],
+      project: data.project || undefined,
+    };
+    setState((prev) => ({
+      ...prev,
+      sessions: [...prev.sessions, newSession],
+    }));
+    toast({
+      title: "✅ Session Added",
+      description: `Manual session added: $${earnings.toFixed(2)}`,
+    });
+  }, [state.settings.hourlyRate]);
+
   // Clear all logs
   const clearLogs = useCallback(() => {
     setState((prev) => ({
@@ -753,5 +814,8 @@ export const useEarningsTracker = (userId?: string | null) => {
     clearLogs,
     resetAllData,
     toggleDarkMode,
+    deleteSession,
+    updateSession,
+    addManualSession,
   };
 };

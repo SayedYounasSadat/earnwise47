@@ -1,53 +1,39 @@
-// Session logs with collapsible entries and break tracking
-import { memo, useState } from "react";
-import { History, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Trash2, Coffee, UtensilsCrossed } from "lucide-react";
+import { memo, useState, useMemo } from "react";
+import { History, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Trash2, Coffee, UtensilsCrossed, Pencil, Plus, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { WorkSession, BreakSession } from "@/types/earnings";
 import { cn } from "@/lib/utils";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { SessionFormDialog } from "./SessionFormDialog";
 
 interface SessionLogsCardProps {
   sessions: WorkSession[];
   onClearLogs: () => void;
+  onDeleteSession?: (id: string) => void;
+  onUpdateSession?: (id: string, updates: Partial<Pick<WorkSession, 'startTime' | 'endTime' | 'notes' | 'project'>>) => void;
+  onAddManualSession?: (data: { date: string; startTime: number; endTime: number; notes: string; project: string }) => void;
+  hourlyRate?: number;
 }
 
-// Format duration to readable string
 const formatDuration = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${secs}s`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${secs}s`;
-  }
+  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+  if (minutes > 0) return `${minutes}m ${secs}s`;
   return `${secs}s`;
 };
 
-// Break entry component
 const BreakEntry = memo(({ breakSession }: { breakSession: BreakSession }) => {
   const isLunch = breakSession.type === "lunch";
-  
   return (
     <div className="flex items-center gap-2 p-2 rounded-md bg-warning/5 border border-warning/10">
-      {isLunch ? (
-        <UtensilsCrossed className="w-3 h-3 text-warning" />
-      ) : (
-        <Coffee className="w-3 h-3 text-primary" />
-      )}
+      {isLunch ? <UtensilsCrossed className="w-3 h-3 text-warning" /> : <Coffee className="w-3 h-3 text-primary" />}
       <span className="text-xs text-muted-foreground">
         {isLunch ? "Lunch" : "Short"} break: {formatDuration(breakSession.duration)}
       </span>
@@ -57,11 +43,9 @@ const BreakEntry = memo(({ breakSession }: { breakSession: BreakSession }) => {
     </div>
   );
 });
-
 BreakEntry.displayName = "BreakEntry";
 
-// Single log entry
-const LogEntry = memo(({ session }: { session: WorkSession }) => {
+const LogEntry = memo(({ session, onDelete, onEdit }: { session: WorkSession; onDelete?: (id: string) => void; onEdit?: (session: WorkSession) => void }) => {
   const [expanded, setExpanded] = useState(false);
   const startDate = new Date(session.startTime);
   const endDate = session.endTime ? new Date(session.endTime) : null;
@@ -69,83 +53,89 @@ const LogEntry = memo(({ session }: { session: WorkSession }) => {
   const totalBreakTime = session.breaks?.reduce((sum, b) => sum + b.duration, 0) || 0;
 
   return (
-    <div
-      className={cn(
-        "border border-border rounded-lg overflow-hidden transition-all duration-200",
-        expanded ? "bg-muted/50" : "bg-card hover:bg-muted/30"
-      )}
-    >
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-3 text-left"
-      >
+    <div className={cn("border border-border rounded-lg overflow-hidden transition-all duration-200", expanded ? "bg-muted/50" : "bg-card hover:bg-muted/30")}>
+      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between p-3 text-left">
         <div className="flex items-center gap-3">
           <div className="p-1.5 rounded-md bg-success/10">
             <Clock className="w-4 h-4 text-success" />
           </div>
           <div>
-            <p className="font-medium text-sm text-foreground">
-              {startDate.toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-              })}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-sm text-foreground">
+                {startDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+              </p>
+              {session.project && (
+                <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                  <Tag className="w-2.5 h-2.5 mr-1" />
+                  {session.project}
+                </Badge>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
               {startDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-              {endDate && (
-                <>
-                  {" → "}
-                  {endDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-                </>
-              )}
-              {breakCount > 0 && (
-                <span className="ml-2 text-warning">• {breakCount} break{breakCount > 1 ? 's' : ''}</span>
-              )}
+              {endDate && <>{" → "}{endDate.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</>}
+              {breakCount > 0 && <span className="ml-2 text-warning">• {breakCount} break{breakCount > 1 ? 's' : ''}</span>}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm font-semibold text-accent">${session.earnings.toFixed(2)}</span>
-          {expanded ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          )}
+          {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </div>
       </button>
 
       {expanded && (
         <div className="px-3 pb-3 pt-1 space-y-2 animate-fade-in">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span>Work Time: {formatDuration(session.duration)}</span>
+            <Clock className="w-3.5 h-3.5" /><span>Work Time: {formatDuration(session.duration)}</span>
           </div>
           {totalBreakTime > 0 && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Coffee className="w-3.5 h-3.5" />
-              <span>Break Time: {formatDuration(totalBreakTime)}</span>
+              <Coffee className="w-3.5 h-3.5" /><span>Break Time: {formatDuration(totalBreakTime)}</span>
             </div>
           )}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <DollarSign className="w-3.5 h-3.5" />
-            <span>Earned: ${session.earnings.toFixed(4)}</span>
+            <DollarSign className="w-3.5 h-3.5" /><span>Earned: ${session.earnings.toFixed(4)}</span>
           </div>
-          
-          {/* Break details */}
           {session.breaks && session.breaks.length > 0 && (
             <div className="mt-2 space-y-1">
               <p className="text-xs font-medium text-muted-foreground mb-1">Breaks taken:</p>
-              {session.breaks.map((breakSession) => (
-                <BreakEntry key={breakSession.id} breakSession={breakSession} />
-              ))}
+              {session.breaks.map((b) => <BreakEntry key={b.id} breakSession={b} />)}
+            </div>
+          )}
+          {session.notes && (
+            <div className="flex items-start gap-2 text-sm text-muted-foreground mt-2">
+              <FileText className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /><span>{session.notes}</span>
             </div>
           )}
 
-          {session.notes && (
-            <div className="flex items-start gap-2 text-sm text-muted-foreground mt-2">
-              <FileText className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-              <span>{session.notes}</span>
+          {/* Edit / Delete actions */}
+          {(onEdit || onDelete) && (
+            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border">
+              {onEdit && (
+                <Button variant="outline" size="sm" onClick={() => onEdit(session)}>
+                  <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
+                </Button>
+              )}
+              {onDelete && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this session?</AlertDialogTitle>
+                      <AlertDialogDescription>This will permanently remove this session log.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDelete(session.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
           )}
         </div>
@@ -153,12 +143,29 @@ const LogEntry = memo(({ session }: { session: WorkSession }) => {
     </div>
   );
 });
-
 LogEntry.displayName = "LogEntry";
 
-export const SessionLogsCard = memo(({ sessions, onClearLogs }: SessionLogsCardProps) => {
-  // Sort sessions by start time, most recent first
+export const SessionLogsCard = memo(({ sessions, onClearLogs, onDeleteSession, onUpdateSession, onAddManualSession, hourlyRate = 15 }: SessionLogsCardProps) => {
   const sortedSessions = [...sessions].sort((a, b) => b.startTime - a.startTime);
+  const [editingSession, setEditingSession] = useState<WorkSession | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+
+  const existingProjects = useMemo(() => {
+    const projects = sessions.map((s) => s.project).filter(Boolean) as string[];
+    return [...new Set(projects)];
+  }, [sessions]);
+
+  const handleEditSave = (data: { date: string; startTime: number; endTime: number; notes: string; project: string }) => {
+    if (editingSession && onUpdateSession) {
+      onUpdateSession(editingSession.id, {
+        startTime: data.startTime,
+        endTime: data.endTime,
+        notes: data.notes,
+        project: data.project || undefined,
+      });
+    }
+    setEditingSession(null);
+  };
 
   return (
     <div className="glass-card rounded-xl p-6 card-hover">
@@ -166,35 +173,34 @@ export const SessionLogsCard = memo(({ sessions, onClearLogs }: SessionLogsCardP
         <div className="flex items-center gap-2">
           <History className="w-5 h-5 text-primary" />
           <h3 className="font-semibold text-foreground">Session Logs</h3>
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            {sessions.length}
-          </span>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{sessions.length}</span>
         </div>
-
-        {sessions.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Clear All Logs?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete all {sessions.length} session logs. This action cannot
-                  be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onClearLogs} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Delete All
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+        <div className="flex items-center gap-2">
+          {onAddManualSession && (
+            <Button variant="outline" size="sm" onClick={() => setShowAddDialog(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Add Session
+            </Button>
+          )}
+          {sessions.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear All Logs?</AlertDialogTitle>
+                  <AlertDialogDescription>This will permanently delete all {sessions.length} session logs.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onClearLogs} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete All</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </div>
 
       {sessions.length === 0 ? (
@@ -207,13 +213,40 @@ export const SessionLogsCard = memo(({ sessions, onClearLogs }: SessionLogsCardP
         <ScrollArea className="h-[300px] pr-4">
           <div className="space-y-2">
             {sortedSessions.map((session) => (
-              <LogEntry key={session.id} session={session} />
+              <LogEntry
+                key={session.id}
+                session={session}
+                onDelete={onDeleteSession}
+                onEdit={onUpdateSession ? setEditingSession : undefined}
+              />
             ))}
           </div>
         </ScrollArea>
       )}
+
+      {/* Edit dialog */}
+      <SessionFormDialog
+        open={!!editingSession}
+        onOpenChange={(open) => { if (!open) setEditingSession(null); }}
+        mode="edit"
+        session={editingSession || undefined}
+        hourlyRate={hourlyRate}
+        existingProjects={existingProjects}
+        onSave={handleEditSave}
+      />
+
+      {/* Add dialog */}
+      {onAddManualSession && (
+        <SessionFormDialog
+          open={showAddDialog}
+          onOpenChange={setShowAddDialog}
+          mode="add"
+          hourlyRate={hourlyRate}
+          existingProjects={existingProjects}
+          onSave={(data) => { onAddManualSession(data); }}
+        />
+      )}
     </div>
   );
 });
-
 SessionLogsCard.displayName = "SessionLogsCard";

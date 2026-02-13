@@ -20,6 +20,7 @@ export interface WorkSession {
   notes: string;
   date: string; // YYYY-MM-DD format
   breaks: BreakSession[]; // breaks taken during this session
+  project?: string; // optional project/client tag
 }
 
 export interface DailyBreakUsage {
