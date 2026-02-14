@@ -343,8 +343,11 @@ export const useEarningsTracker = (userId?: string | null) => {
     };
   }, [state.isOnBreak, state.currentBreakStart]);
 
-  // Auto-save to localStorage every second
+  // Auto-save to localStorage every second (skip until cloud data loaded for logged-in users)
+  const canSave = !userId || cloudLoaded;
+
   useEffect(() => {
+    if (!canSave) return;
     saveIntervalRef.current = setInterval(() => {
       saveStateLocal(state);
     }, 1000);
@@ -354,12 +357,13 @@ export const useEarningsTracker = (userId?: string | null) => {
         clearInterval(saveIntervalRef.current);
       }
     };
-  }, [state]);
+  }, [state, canSave]);
 
   // Save immediately on critical changes
   useEffect(() => {
+    if (!canSave) return;
     saveStateLocal(state);
-  }, [state.isWorking, state.isPaused, state.isOnBreak, state.currentSessionDuration, state.sessions]);
+  }, [state.isWorking, state.isPaused, state.isOnBreak, state.currentSessionDuration, state.sessions, canSave]);
 
   // Check milestones on earnings change
   useEffect(() => {
