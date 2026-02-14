@@ -21,6 +21,7 @@ import { HeatmapCalendar } from "./HeatmapCalendar";
 import { EarningsProjections } from "./EarningsProjections";
 import { ComparisonCharts } from "./ComparisonCharts";
 import { PomodoroTimer } from "./PomodoroTimer";
+import { StreakAchievements } from "./StreakAchievements";
 import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar } from "lucide-react";
 
@@ -211,6 +212,8 @@ export const Dashboard = () => {
             </div>
             
             <HeatmapCalendar sessions={sessions} />
+
+            <StreakAchievements sessions={sessions} />
 
             <div className="grid gap-6 md:grid-cols-2">
               <TotalsCard
