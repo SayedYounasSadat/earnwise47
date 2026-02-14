@@ -74,18 +74,52 @@ const checkDailyReset = (saved: AppState): DailyBreakUsage => {
   return saved.dailyBreakUsage || DEFAULT_BREAK_USAGE;
 };
 
+// Max session duration sanity check: 24 hours in seconds
+const MAX_SESSION_DURATION = 24 * 3600;
+
+const sanitizeDuration = (duration: number): number => {
+  if (!duration || duration < 0 || !isFinite(duration)) return 0;
+  return Math.min(duration, MAX_SESSION_DURATION);
+};
+
 const buildStateFromSaved = (saved: AppState, restoreTimer: boolean = true): AppState => {
   const today = getTodayDate();
   const todayLog = saved.dailyLogs.find((log) => log.date === today);
+
+  const commonSchedule = saved.schedule?.map(s => ({
+    ...s,
+    dailyGoal: s.dailyGoal ?? saved.settings.dailyGoal ?? 100
+  })) || DEFAULT_SCHEDULE;
 
   // If the timer was running when the app was closed, restore it
   const wasWorking = restoreTimer && saved.isWorking && !saved.isPaused && !saved.isOnBreak && saved.currentSessionStart;
   const wasPaused = restoreTimer && saved.isWorking && saved.isPaused;
 
   if (wasWorking && saved.currentSessionStart) {
-    // Timer was actively running - recalculate duration based on elapsed real time
-    const elapsed = Math.floor((Date.now() - saved.currentSessionStart) / 1000);
-    const totalDuration = (saved.accumulatedDuration || 0) + elapsed;
+    const now = Date.now();
+    // Sanity check: if currentSessionStart is in the future or unreasonably old, reset
+    if (saved.currentSessionStart > now || (now - saved.currentSessionStart) / 1000 > MAX_SESSION_DURATION) {
+      return {
+        ...saved,
+        isWorking: false,
+        isPaused: false,
+        isOnBreak: false,
+        currentBreakType: null,
+        currentBreakStart: null,
+        currentSessionBreaks: [],
+        currentSessionStart: null,
+        currentSessionDuration: 0,
+        accumulatedDuration: 0,
+        totalEarningsToday: todayLog?.totalEarnings || 0,
+        loginTime: Date.now(),
+        dailyBreakUsage: checkDailyReset(saved),
+        schedule: commonSchedule,
+      };
+    }
+
+    const elapsed = Math.floor((now - saved.currentSessionStart) / 1000);
+    const accumulated = sanitizeDuration(saved.accumulatedDuration || 0);
+    const totalDuration = sanitizeDuration(accumulated + elapsed);
 
     return {
       ...saved,
@@ -96,19 +130,16 @@ const buildStateFromSaved = (saved: AppState, restoreTimer: boolean = true): App
       currentBreakStart: null,
       currentSessionStart: saved.currentSessionStart,
       currentSessionDuration: totalDuration,
-      accumulatedDuration: saved.accumulatedDuration || 0,
+      accumulatedDuration: accumulated,
       totalEarningsToday: todayLog?.totalEarnings || 0,
       loginTime: saved.loginTime || Date.now(),
       dailyBreakUsage: checkDailyReset(saved),
-      schedule: saved.schedule?.map(s => ({
-        ...s,
-        dailyGoal: s.dailyGoal ?? saved.settings.dailyGoal ?? 100
-      })) || DEFAULT_SCHEDULE,
+      schedule: commonSchedule,
     };
   }
 
   if (wasPaused) {
-    // Timer was paused - restore paused state with accumulated duration intact
+    const accumulated = sanitizeDuration(saved.accumulatedDuration || saved.currentSessionDuration || 0);
     return {
       ...saved,
       isWorking: true,
@@ -117,15 +148,12 @@ const buildStateFromSaved = (saved: AppState, restoreTimer: boolean = true): App
       currentBreakType: null,
       currentBreakStart: null,
       currentSessionStart: null,
-      currentSessionDuration: saved.accumulatedDuration || saved.currentSessionDuration || 0,
-      accumulatedDuration: saved.accumulatedDuration || saved.currentSessionDuration || 0,
+      currentSessionDuration: accumulated,
+      accumulatedDuration: accumulated,
       totalEarningsToday: todayLog?.totalEarnings || 0,
       loginTime: saved.loginTime || Date.now(),
       dailyBreakUsage: checkDailyReset(saved),
-      schedule: saved.schedule?.map(s => ({
-        ...s,
-        dailyGoal: s.dailyGoal ?? saved.settings.dailyGoal ?? 100
-      })) || DEFAULT_SCHEDULE,
+      schedule: commonSchedule,
     };
   }
   
@@ -138,15 +166,12 @@ const buildStateFromSaved = (saved: AppState, restoreTimer: boolean = true): App
     currentBreakStart: null,
     currentSessionBreaks: [],
     currentSessionStart: null,
-    currentSessionDuration: saved.currentSessionDuration || 0,
-    accumulatedDuration: saved.accumulatedDuration || 0,
+    currentSessionDuration: 0,
+    accumulatedDuration: 0,
     totalEarningsToday: todayLog?.totalEarnings || 0,
     loginTime: saved.loginTime || Date.now(),
     dailyBreakUsage: checkDailyReset(saved),
-    schedule: saved.schedule?.map(s => ({
-      ...s,
-      dailyGoal: s.dailyGoal ?? saved.settings.dailyGoal ?? 100
-    })) || DEFAULT_SCHEDULE,
+    schedule: commonSchedule,
   };
 };
 
@@ -300,10 +325,12 @@ export const useEarningsTracker = (userId?: string | null) => {
     if (state.isWorking && !state.isPaused && !state.isOnBreak && state.currentSessionStart) {
       intervalRef.current = setInterval(() => {
         setState((prev) => {
-          const elapsed = Math.floor((Date.now() - prev.currentSessionStart!) / 1000);
+          if (!prev.currentSessionStart) return prev;
+          const elapsed = Math.floor((Date.now() - prev.currentSessionStart) / 1000);
+          const total = sanitizeDuration((prev.accumulatedDuration || 0) + elapsed);
           return { 
             ...prev, 
-            currentSessionDuration: prev.accumulatedDuration + elapsed 
+            currentSessionDuration: total 
           };
         });
       }, 100);
