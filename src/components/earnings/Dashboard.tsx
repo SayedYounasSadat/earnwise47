@@ -22,6 +22,8 @@ import { EarningsProjections } from "./EarningsProjections";
 import { ComparisonCharts } from "./ComparisonCharts";
 import { PomodoroTimer } from "./PomodoroTimer";
 import { StreakAchievements } from "./StreakAchievements";
+import { OvertimeCard } from "./OvertimeCard";
+import { MissedTimeCard } from "./MissedTimeCard";
 import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar } from "lucide-react";
 
@@ -211,9 +213,14 @@ export const Dashboard = () => {
               <ComparisonCharts sessions={sessions} />
             </div>
             
+            <div className="grid gap-6 md:grid-cols-2">
+              <OvertimeCard sessions={sessions} schedule={schedule} settings={settings} />
+              <MissedTimeCard sessions={sessions} schedule={schedule} />
+            </div>
+
             <HeatmapCalendar sessions={sessions} />
 
-            <StreakAchievements sessions={sessions} />
+            <StreakAchievements sessions={sessions} schedule={schedule} />
 
             <div className="grid gap-6 md:grid-cols-2">
               <TotalsCard

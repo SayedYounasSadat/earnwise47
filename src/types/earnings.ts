@@ -54,6 +54,7 @@ export interface Settings {
   dailyGoal: number; // Default daily goal in USD
   darkMode: boolean;
   notifications: boolean;
+  overtimeMultiplier: number; // e.g. 1.5x for overtime pay
 }
 
 export interface AppState {
@@ -90,6 +91,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dailyGoal: 100,
   darkMode: false,
   notifications: true,
+  overtimeMultiplier: 1.5,
 };
 
 export const DEFAULT_SCHEDULE: ScheduleEntry[] = [

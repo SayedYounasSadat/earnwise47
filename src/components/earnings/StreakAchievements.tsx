@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface StreakAchievementsProps {
   sessions: WorkSession[];
+  schedule?: import("@/types/earnings").ScheduleEntry[];
 }
 
 interface Achievement {
@@ -22,47 +23,70 @@ const getUniqueWorkDays = (sessions: WorkSession[]): string[] => {
   return [...new Set(sessions.map(s => s.date))].sort();
 };
 
-const calculateStreak = (sessions: WorkSession[]): { current: number; best: number } => {
+const isDayOff = (dateStr: string, schedule?: import("@/types/earnings").ScheduleEntry[]): boolean => {
+  if (!schedule || schedule.length === 0) return false;
+  const d = new Date(dateStr + "T00:00:00");
+  const dayOfWeek = d.getDay();
+  const entry = schedule.find((s) => s.dayOfWeek === dayOfWeek);
+  return !entry || !entry.enabled;
+};
+
+const isGapAllOffDays = (from: string, to: string, schedule?: import("@/types/earnings").ScheduleEntry[]): boolean => {
+  if (!schedule || schedule.length === 0) return false;
+  const start = new Date(from + "T00:00:00");
+  const end = new Date(to + "T00:00:00");
+  // Check each day in between (exclusive of from and to)
+  const d = new Date(start);
+  d.setDate(d.getDate() + 1);
+  while (d < end) {
+    const dateStr = d.toISOString().split("T")[0];
+    if (!isDayOff(dateStr, schedule)) return false;
+    d.setDate(d.getDate() + 1);
+  }
+  return true;
+};
+
+const calculateStreak = (sessions: WorkSession[], schedule?: import("@/types/earnings").ScheduleEntry[]): { current: number; best: number } => {
   const days = getUniqueWorkDays(sessions);
   if (days.length === 0) return { current: 0, best: 0 };
 
   const today = new Date().toISOString().split("T")[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
-  let current = 0;
   let best = 0;
   let streak = 1;
 
-  // Check if the streak is still active (worked today or yesterday)
+  // Check if the streak is still active (worked today, or yesterday, or last work day with off days in between)
   const lastDay = days[days.length - 1];
-  const streakActive = lastDay === today || lastDay === yesterday;
+  let streakActive = lastDay === today || lastDay === yesterday;
+  if (!streakActive && lastDay < today) {
+    streakActive = isGapAllOffDays(lastDay, today, schedule);
+  }
 
-  // Calculate streaks
+  // Calculate best streak (schedule-aware)
   for (let i = days.length - 1; i > 0; i--) {
-    const curr = new Date(days[i]);
-    const prev = new Date(days[i - 1]);
-    const diffDays = (curr.getTime() - prev.getTime()) / 86400000;
+    const curr = days[i];
+    const prev = days[i - 1];
+    const diffDays = (new Date(curr).getTime() - new Date(prev).getTime()) / 86400000;
 
-    if (diffDays === 1) {
+    if (diffDays === 1 || isGapAllOffDays(prev, curr, schedule)) {
       streak++;
     } else {
-      if (i === days.length - 1 || current === 0) {
-        // This was the current streak calculation
-      }
       best = Math.max(best, streak);
       streak = 1;
     }
   }
   best = Math.max(best, streak);
-  
+
   // Current streak: count backwards from most recent day
+  let current = 0;
   if (streakActive) {
     current = 1;
     for (let i = days.length - 1; i > 0; i--) {
-      const curr = new Date(days[i]);
-      const prev = new Date(days[i - 1]);
-      const diffDays = (curr.getTime() - prev.getTime()) / 86400000;
-      if (diffDays === 1) {
+      const curr = days[i];
+      const prev = days[i - 1];
+      const diffDays = (new Date(curr).getTime() - new Date(prev).getTime()) / 86400000;
+      if (diffDays === 1 || isGapAllOffDays(prev, curr, schedule)) {
         current++;
       } else {
         break;
@@ -73,15 +97,15 @@ const calculateStreak = (sessions: WorkSession[]): { current: number; best: numb
   return { current, best };
 };
 
-export const StreakAchievements = memo(({ sessions }: StreakAchievementsProps) => {
+export const StreakAchievements = memo(({ sessions, schedule }: StreakAchievementsProps) => {
   const stats = useMemo(() => {
     const totalEarnings = sessions.reduce((sum, s) => sum + s.earnings, 0);
     const totalHours = sessions.reduce((sum, s) => sum + s.duration, 0) / 3600;
     const totalSessions = sessions.length;
-    const streak = calculateStreak(sessions);
+    const streak = calculateStreak(sessions, schedule);
     const uniqueDays = getUniqueWorkDays(sessions).length;
     return { totalEarnings, totalHours, totalSessions, streak, uniqueDays };
-  }, [sessions]);
+  }, [sessions, schedule]);
 
   const achievements: Achievement[] = useMemo(() => [
     // Earnings milestones

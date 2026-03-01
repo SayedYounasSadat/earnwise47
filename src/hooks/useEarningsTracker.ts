@@ -711,7 +711,7 @@ export const useEarningsTracker = (userId?: string | null) => {
   }, []);
 
   // Update a session's fields and recalculate duration/earnings
-  const updateSession = useCallback((id: string, updates: Partial<Pick<WorkSession, 'startTime' | 'endTime' | 'notes' | 'project'>>) => {
+  const updateSession = useCallback((id: string, updates: Partial<Pick<WorkSession, 'startTime' | 'endTime' | 'notes' | 'project' | 'date'>>) => {
     setState((prev) => ({
       ...prev,
       sessions: prev.sessions.map((s) => {
