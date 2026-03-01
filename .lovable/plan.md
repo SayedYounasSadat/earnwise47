@@ -1,72 +1,115 @@
 
 
-# Session Management Upgrades
+# Overtime, Smart Streaks, Missed Time Tracking, and Edit Bug Fixes
 
-This plan adds three powerful features to the Logs tab: editing sessions, deleting individual sessions, adding manual entries, and tagging sessions with a project/client name.
+## Overview
 
----
-
-## What You'll Get
-
-1. **Edit Sessions** -- Click an edit button on any session log to change its start/end time, notes, or project tag in a dialog form.
-2. **Delete Individual Sessions** -- Remove a single session with a confirmation prompt (instead of only "clear all").
-3. **Manual Time Entry** -- An "Add Session" button at the top of the Logs tab opens a form where you pick a date, start time, end time, notes, and project/client tag. Earnings are auto-calculated from your hourly rate.
-4. **Project/Client Tagging** -- Every session gets an optional `project` field. A dropdown/input lets you pick from previously used tags or type a new one. Tags appear as colored badges on each log entry.
+Four improvements: overtime calculation based on your schedule, schedule-aware streak tracking that ignores off days, missed hours/days tracking, and fixing bugs in the session editing logic.
 
 ---
 
-## Changes Overview
+## 1. Fix Session Editing Bugs
 
-### 1. Update the WorkSession type
-**File:** `src/types/earnings.ts`
-- Add an optional `project?: string` field to the `WorkSession` interface.
+**Problems found:**
+- When you edit a session and change the date, the `date` field on the session never updates -- only `startTime`/`endTime`/`notes`/`project` are passed through.
+- The `updateSession` hook function doesn't accept or update the `date` field at all.
+- The `handleEditSave` in `SessionLogsCard` strips out the `date` from the save data before passing it to the hook.
 
-### 2. Add hook functions for edit, delete, and manual add
-**File:** `src/hooks/useEarningsTracker.ts`
-- **`deleteSession(id)`** -- Removes a single session by ID from state.
-- **`updateSession(id, updates)`** -- Updates a session's fields (startTime, endTime, notes, project) and recalculates duration/earnings.
-- **`addManualSession(data)`** -- Creates a new WorkSession from manual input (date, start/end times, notes, project), calculates duration and earnings from the hourly rate, and appends it to sessions.
-- Expose all three from the hook's return object.
+**Fix:**
+- Update `updateSession` in `useEarningsTracker.ts` to also accept and apply `date` changes.
+- Update `handleEditSave` in `SessionLogsCard.tsx` to pass the `date` field through to `onUpdateSession`.
+- Extend the `onUpdateSession` prop type to include `date`.
 
-### 3. Create a Session Edit/Add Dialog component
-**File:** `src/components/earnings/SessionFormDialog.tsx` (new)
-- A reusable dialog used for both editing and adding sessions.
-- Fields: Date picker, Start Time, End Time, Notes (textarea), Project/Client (combobox input with suggestions from past sessions).
-- Validates that end time is after start time.
-- Shows calculated earnings preview based on duration and hourly rate.
-- Two modes: "Add Session" (empty form) and "Edit Session" (pre-filled with existing data).
+---
 
-### 4. Update SessionLogsCard with edit/delete actions and project badges
-**File:** `src/components/earnings/SessionLogsCard.tsx`
-- Add `onDeleteSession`, `onUpdateSession`, and `hourlyRate` props.
-- Each expanded LogEntry gets **Edit** and **Delete** buttons.
-- Delete shows an AlertDialog confirmation for that single session.
-- Edit opens the SessionFormDialog in edit mode.
-- Display the `project` tag as a small badge next to the session date.
+## 2. Overtime Tracking
 
-### 5. Add "Add Session" button and manual entry to Dashboard
-**File:** `src/components/earnings/Dashboard.tsx`
-- In the Logs tab, add an "Add Session" button that opens the SessionFormDialog in add mode.
-- Pass the new `deleteSession`, `updateSession`, and `addManualSession` functions down to SessionLogsCard.
-- Pass `settings.hourlyRate` so earnings can be calculated.
+A new card/section that calculates overtime by comparing actual hours worked each day against scheduled hours.
+
+**How it works:**
+- For each day with a schedule entry, calculate `scheduled hours = endTime - startTime`.
+- Sum actual session durations for that day.
+- If actual > scheduled, the difference is **overtime**.
+- Display daily, weekly, and monthly overtime totals.
+- Optionally show an overtime multiplier (e.g., 1.5x) with estimated overtime earnings.
+
+**Files:**
+- **New:** `src/components/earnings/OvertimeCard.tsx` -- Displays overtime summary (today, this week, this month) with a breakdown table.
+- **`src/types/earnings.ts`** -- Add an `overtimeMultiplier` field (default 1.5) to `Settings`.
+- **`src/components/earnings/SettingsCard.tsx`** -- Add an overtime multiplier input field.
+- **`src/components/earnings/Dashboard.tsx`** -- Add the OvertimeCard to the Analytics tab.
+
+---
+
+## 3. Schedule-Aware Streaks
+
+Currently, streaks break when you skip a day -- even if that day is disabled in your schedule (e.g., weekends). This fix makes streaks only count scheduled work days.
+
+**Changes:**
+- **`src/components/earnings/StreakAchievements.tsx`** -- Update `calculateStreak` to accept the `schedule` array and skip disabled days when checking for consecutive work. For example, if Saturday and Sunday are off, working Friday then Monday still counts as consecutive.
+- **`src/components/earnings/Dashboard.tsx`** -- Pass `schedule` prop to `StreakAchievements`.
+
+**Logic:**
+```text
+For each gap between work days:
+  - Get all dates in the gap
+  - Check if ALL of those dates are disabled in the schedule
+  - If yes: streak continues (they were off days)
+  - If no: streak breaks (a scheduled work day was missed)
+```
+
+---
+
+## 4. Missed Hours and Days Tracking
+
+A new component that shows which scheduled shifts were missed or had insufficient hours.
+
+**How it works:**
+- Look back over the past 30 days.
+- For each day that had an enabled schedule entry, check if any sessions exist for that day.
+- If no sessions: mark as a **missed day**.
+- If sessions exist but total hours are less than scheduled: calculate **missed hours**.
+- Display a summary: total missed days, total missed hours, and a scrollable list of specific missed/short days.
+
+**Files:**
+- **New:** `src/components/earnings/MissedTimeCard.tsx` -- Shows missed days count, missed hours total, and a list of specific dates with details.
+- **`src/components/earnings/Dashboard.tsx`** -- Add MissedTimeCard to the Analytics tab.
+
+---
+
+## Summary of File Changes
+
+| File | Action |
+|------|--------|
+| `src/types/earnings.ts` | Add `overtimeMultiplier` to `Settings` |
+| `src/hooks/useEarningsTracker.ts` | Fix `updateSession` to handle `date` field |
+| `src/components/earnings/SessionLogsCard.tsx` | Fix `handleEditSave` to pass `date` |
+| `src/components/earnings/OvertimeCard.tsx` | **New** -- overtime calculation and display |
+| `src/components/earnings/MissedTimeCard.tsx` | **New** -- missed days/hours tracking |
+| `src/components/earnings/StreakAchievements.tsx` | Make streak calculation schedule-aware |
+| `src/components/earnings/SettingsCard.tsx` | Add overtime multiplier setting |
+| `src/components/earnings/Dashboard.tsx` | Wire up new components and pass schedule to streaks |
 
 ---
 
 ## Technical Details
 
-**Session Form Validation (using basic checks, no extra deps):**
-- Date: required, cannot be in the future
-- Start/End time: required, end must be after start
-- Project: optional, max 50 characters, trimmed
-- Notes: optional, max 500 characters
-
-**Earnings auto-calculation in manual entry:**
-```
-duration = (endTime - startTime) in seconds
-earnings = (duration / 3600) * hourlyRate
+**Overtime calculation:**
+```text
+scheduledHours = (scheduleEnd - scheduleStart) in hours
+actualHours = sum of session durations for that day
+overtime = max(0, actualHours - scheduledHours)
+overtimeEarnings = overtime * hourlyRate * overtimeMultiplier
 ```
 
-**Project tag suggestions:** Derived by collecting unique `session.project` values from all existing sessions, displayed as a datalist or combobox dropdown.
+**Missed time calculation:**
+- Only checks past dates (not today, since today is still in progress).
+- Only checks days where `schedule[dayOfWeek].enabled === true`.
+- A day is "missed" if zero sessions exist for it.
+- A day is "short" if total session hours < scheduled hours.
 
-**Backward compatibility:** The `project` field is optional, so all existing sessions continue to work without changes. Import/export will naturally include the new field when present.
+**Schedule-aware streak logic:**
+- When checking the gap between two consecutive work days, iterate through each date in the gap and check if its day-of-week is enabled in the schedule.
+- If any gap date falls on a scheduled (enabled) day with no work, the streak breaks.
+- If all gap dates are off days, the streak continues.
 
