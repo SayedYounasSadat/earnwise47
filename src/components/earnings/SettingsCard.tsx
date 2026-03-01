@@ -1,6 +1,6 @@
 // Settings card for hourly rate, exchange rate, and daily goal
 import { memo, useState, useEffect } from "react";
-import { Settings as SettingsIcon, DollarSign, RefreshCw, Target } from "lucide-react";
+import { Settings as SettingsIcon, DollarSign, RefreshCw, Target, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings } from "@/types/earnings";
@@ -14,12 +14,14 @@ export const SettingsCard = memo(({ settings, onUpdate }: SettingsCardProps) => 
   const [hourlyRate, setHourlyRate] = useState(settings.hourlyRate.toString());
   const [exchangeRate, setExchangeRate] = useState(settings.exchangeRate.toString());
   const [dailyGoal, setDailyGoal] = useState(settings.dailyGoal.toString());
+  const [overtimeMultiplier, setOvertimeMultiplier] = useState((settings.overtimeMultiplier ?? 1.5).toString());
 
   // Sync local state with props
   useEffect(() => {
     setHourlyRate(settings.hourlyRate.toString());
     setExchangeRate(settings.exchangeRate.toString());
     setDailyGoal(settings.dailyGoal.toString());
+    setOvertimeMultiplier((settings.overtimeMultiplier ?? 1.5).toString());
   }, [settings]);
 
   // Update hourly rate
@@ -46,6 +48,15 @@ export const SettingsCard = memo(({ settings, onUpdate }: SettingsCardProps) => 
     const num = parseFloat(value);
     if (!isNaN(num) && num >= 0) {
       onUpdate({ dailyGoal: num });
+    }
+  };
+
+  // Update overtime multiplier
+  const handleOvertimeMultiplierChange = (value: string) => {
+    setOvertimeMultiplier(value);
+    const num = parseFloat(value);
+    if (!isNaN(num) && num >= 1) {
+      onUpdate({ overtimeMultiplier: num });
     }
   };
 
@@ -106,6 +117,26 @@ export const SettingsCard = memo(({ settings, onUpdate }: SettingsCardProps) => 
             onChange={(e) => handleDailyGoalChange(e.target.value)}
             className="bg-background"
           />
+        </div>
+
+        {/* Overtime Multiplier */}
+        <div className="space-y-2">
+          <Label htmlFor="overtimeMultiplier" className="flex items-center gap-2 text-sm">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            Overtime Multiplier
+          </Label>
+          <Input
+            id="overtimeMultiplier"
+            type="number"
+            min="1"
+            step="0.1"
+            value={overtimeMultiplier}
+            onChange={(e) => handleOvertimeMultiplierChange(e.target.value)}
+            className="bg-background"
+          />
+          <p className="text-xs text-muted-foreground">
+            Overtime pay = hourly rate × {settings.overtimeMultiplier ?? 1.5}x
+          </p>
         </div>
 
         {/* Quick stats */}

@@ -15,7 +15,7 @@ interface SessionLogsCardProps {
   sessions: WorkSession[];
   onClearLogs: () => void;
   onDeleteSession?: (id: string) => void;
-  onUpdateSession?: (id: string, updates: Partial<Pick<WorkSession, 'startTime' | 'endTime' | 'notes' | 'project'>>) => void;
+  onUpdateSession?: (id: string, updates: Partial<Pick<WorkSession, 'startTime' | 'endTime' | 'notes' | 'project' | 'date'>>) => void;
   onAddManualSession?: (data: { date: string; startTime: number; endTime: number; notes: string; project: string }) => void;
   hourlyRate?: number;
 }
@@ -158,6 +158,7 @@ export const SessionLogsCard = memo(({ sessions, onClearLogs, onDeleteSession, o
   const handleEditSave = (data: { date: string; startTime: number; endTime: number; notes: string; project: string }) => {
     if (editingSession && onUpdateSession) {
       onUpdateSession(editingSession.id, {
+        date: data.date,
         startTime: data.startTime,
         endTime: data.endTime,
         notes: data.notes,
