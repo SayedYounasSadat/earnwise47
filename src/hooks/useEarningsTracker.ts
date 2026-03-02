@@ -33,7 +33,7 @@ const getWeekStart = (): Date => {
   const now = new Date();
   const day = now.getDay();
   const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(now.setDate(diff));
+  return new Date(now.getFullYear(), now.getMonth(), diff);
 };
 
 // Get start of month
@@ -260,6 +260,21 @@ export const useEarningsTracker = (userId?: string | null) => {
     };
   }, [userId, cloudLoaded, state]);
 
+  // Save immediately when user leaves/refreshes the page
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveStateLocal(state);
+      // Use sendBeacon for reliable cloud save on unload
+      if (userId && cloudLoaded) {
+        saveUserData(userId, state);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [state, userId, cloudLoaded]);
+
+
   // Get today's daily goal from schedule
   const getTodayGoal = useCallback((): number => {
     const today = new Date().getDay();
@@ -328,12 +343,13 @@ export const useEarningsTracker = (userId?: string | null) => {
           if (!prev.currentSessionStart) return prev;
           const elapsed = Math.floor((Date.now() - prev.currentSessionStart) / 1000);
           const total = sanitizeDuration((prev.accumulatedDuration || 0) + elapsed);
+          if (total === prev.currentSessionDuration) return prev; // skip unnecessary re-render
           return { 
             ...prev, 
             currentSessionDuration: total 
           };
         });
-      }, 100);
+      }, 1000);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -354,7 +370,7 @@ export const useEarningsTracker = (userId?: string | null) => {
       breakIntervalRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - state.currentBreakStart!) / 1000);
         setBreakDuration(elapsed);
-      }, 100);
+      }, 1000);
     } else {
       if (breakIntervalRef.current) {
         clearInterval(breakIntervalRef.current);
@@ -582,6 +598,7 @@ export const useEarningsTracker = (userId?: string | null) => {
         description: `Earned $${earnings.toFixed(2)} in ${Math.floor(duration / 60)}m ${duration % 60}s`,
       });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [state.isWorking, state.isPaused, state.isOnBreak, state.currentSessionDuration, state.currentSessionBreaks, state.settings.hourlyRate, endBreak]
   );
 
