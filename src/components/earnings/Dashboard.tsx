@@ -46,6 +46,7 @@ export const Dashboard = () => {
     settings,
     sessions,
     schedule,
+    syncStatus,
     startWork,
     startBreak,
     endBreak,
@@ -80,6 +81,7 @@ export const Dashboard = () => {
       <Header
         isDarkMode={settings.darkMode}
         onToggleDarkMode={toggleDarkMode}
+        syncStatus={syncStatus}
         user={user ? {
           displayName: user.displayName,
           email: user.email,

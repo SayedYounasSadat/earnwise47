@@ -208,10 +208,12 @@ export const useEarningsTracker = (userId?: string | null) => {
   const [state, setState] = useState<AppState>(getInitialState);
   const [breakDuration, setBreakDuration] = useState(0);
   const [cloudLoaded, setCloudLoaded] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced" | "error">("idle");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const breakIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const saveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const cloudSaveRef = useRef<NodeJS.Timeout | null>(null);
+  const syncResetRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load data from Firestore when user logs in
   useEffect(() => {
@@ -221,11 +223,13 @@ export const useEarningsTracker = (userId?: string | null) => {
     }
 
     const loadCloud = async () => {
+      setSyncStatus("syncing");
       const cloudData = await loadUserData(userId);
       if (cloudData) {
         const restored = buildStateFromSaved(cloudData);
         setState(restored);
         saveStateLocal(restored);
+        setSyncStatus("synced");
         toast({
           title: "☁️ Data Synced",
           description: "Your data has been loaded from the cloud.",
@@ -234,11 +238,15 @@ export const useEarningsTracker = (userId?: string | null) => {
         // First login - push local data to cloud
         const localData = loadState();
         if (localData && localData.sessions.length > 0) {
-          await saveUserData(userId, localData);
+          const success = await saveUserData(userId, localData);
+          setSyncStatus(success ? "synced" : "error");
           toast({
-            title: "☁️ Data Uploaded",
-            description: "Your local data has been saved to the cloud.",
+            title: success ? "☁️ Data Uploaded" : "⚠️ Sync Issue",
+            description: success ? "Your local data has been saved to the cloud." : "Could not upload data. Will retry.",
+            variant: success ? "default" : "destructive",
           });
+        } else {
+          setSyncStatus("synced");
         }
       }
       setCloudLoaded(true);
@@ -252,8 +260,13 @@ export const useEarningsTracker = (userId?: string | null) => {
     if (!userId || !cloudLoaded) return;
 
     if (cloudSaveRef.current) clearTimeout(cloudSaveRef.current);
-    cloudSaveRef.current = setTimeout(() => {
-      saveUserData(userId, state);
+    cloudSaveRef.current = setTimeout(async () => {
+      setSyncStatus("syncing");
+      const success = await saveUserData(userId, state);
+      setSyncStatus(success ? "synced" : "error");
+      // Auto-reset to idle after 3 seconds
+      if (syncResetRef.current) clearTimeout(syncResetRef.current);
+      syncResetRef.current = setTimeout(() => setSyncStatus("idle"), 3000);
     }, 5000);
 
     return () => {
@@ -848,6 +861,7 @@ export const useEarningsTracker = (userId?: string | null) => {
     settings: state.settings,
     sessions: state.sessions,
     schedule: state.schedule,
+    syncStatus,
     startWork,
     startBreak,
     endBreak,
