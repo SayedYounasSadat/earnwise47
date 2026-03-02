@@ -1,4 +1,5 @@
 // Core hook for managing all earnings tracker state and logic
+// v2 – patched sync, timer, and date logic
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   AppState,
