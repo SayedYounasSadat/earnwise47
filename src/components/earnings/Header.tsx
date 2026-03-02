@@ -1,7 +1,8 @@
 // App header with dark mode toggle and user menu
 import { memo } from "react";
-import { Moon, Sun, Wallet, LogOut, User } from "lucide-react";
+import { Moon, Sun, Wallet, LogOut, User, Cloud, CloudOff, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 interface HeaderProps {
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
+  syncStatus?: "idle" | "syncing" | "synced" | "error";
   user?: {
     displayName: string | null;
     email: string | null;
@@ -23,7 +25,31 @@ interface HeaderProps {
   onLogout?: () => void;
 }
 
-export const Header = memo(({ isDarkMode, onToggleDarkMode, user, onLogout }: HeaderProps) => {
+const SyncIndicator = ({ status }: { status: "idle" | "syncing" | "synced" | "error" }) => {
+  const config = {
+    idle: { icon: <Cloud className="w-4 h-4 text-muted-foreground" />, label: "Cloud connected" },
+    syncing: { icon: <Loader2 className="w-4 h-4 text-primary animate-spin" />, label: "Syncing..." },
+    synced: { icon: <Check className="w-4 h-4 text-accent" />, label: "All changes saved" },
+    error: { icon: <CloudOff className="w-4 h-4 text-destructive" />, label: "Sync failed – will retry" },
+  };
+  const { icon, label } = config[status];
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/50 text-xs text-muted-foreground cursor-default select-none">
+          {icon}
+          <span className="hidden sm:inline">{status === "syncing" ? "Syncing" : status === "synced" ? "Saved" : status === "error" ? "Error" : "Cloud"}</span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        <p>{label}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
+export const Header = memo(({ isDarkMode, onToggleDarkMode, syncStatus, user, onLogout }: HeaderProps) => {
   const initials = user?.displayName
     ? user.displayName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.[0]?.toUpperCase() || "?";
@@ -45,6 +71,8 @@ export const Header = memo(({ isDarkMode, onToggleDarkMode, user, onLogout }: He
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Sync indicator */}
+          {user && syncStatus && <SyncIndicator status={syncStatus} />}
           {/* Dark mode toggle */}
           <Button
             variant="ghost"
