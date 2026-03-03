@@ -1,12 +1,13 @@
 // Timer display component with animated digits
 import { memo } from "react";
 import { cn } from "@/lib/utils";
-import { Coffee } from "lucide-react";
+import { Coffee, Clock } from "lucide-react";
 
 interface TimerDisplayProps {
   seconds: number;
   isActive: boolean;
   isPaused: boolean;
+  shiftRemaining?: string | null; // e.g. "3h 22m left"
 }
 
 // Format seconds to HH:MM:SS
@@ -36,7 +37,7 @@ const Digit = memo(({ value, isActive }: { value: string; isActive: boolean }) =
 
 Digit.displayName = "Digit";
 
-export const TimerDisplay = memo(({ seconds, isActive, isPaused }: TimerDisplayProps) => {
+export const TimerDisplay = memo(({ seconds, isActive, isPaused, shiftRemaining }: TimerDisplayProps) => {
   const time = formatTime(seconds);
 
   // Determine status
@@ -88,6 +89,14 @@ export const TimerDisplay = memo(({ seconds, isActive, isPaused }: TimerDisplayP
         <span className="w-16 text-center">Minutes</span>
         <span className="w-16 text-center">Seconds</span>
       </div>
+
+      {/* Shift remaining */}
+      {shiftRemaining && isActive && (
+        <div className="flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-muted/60 text-xs text-muted-foreground">
+          <Clock className="w-3 h-3" />
+          {shiftRemaining}
+        </div>
+      )}
     </div>
   );
 });

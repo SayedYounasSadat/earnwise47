@@ -1,6 +1,6 @@
 // Earnings Tracker Type Definitions
 
-export type BreakType = "lunch" | "short" | "custom";
+export type BreakType = "lunch" | "short" | "rr" | "custom";
 
 export interface BreakSession {
   id: string;
@@ -26,6 +26,7 @@ export interface WorkSession {
 export interface DailyBreakUsage {
   lunchUsed: boolean; // 1x 30-min
   shortBreaksUsed: number; // max 2x 15-min
+  rrBreaksUsed: number; // max 2x, no fixed duration
 }
 
 export interface DailyLog {
@@ -107,6 +108,7 @@ export const DEFAULT_SCHEDULE: ScheduleEntry[] = [
 export const DEFAULT_BREAK_USAGE: DailyBreakUsage = {
   lunchUsed: false,
   shortBreaksUsed: 0,
+  rrBreaksUsed: 0,
 };
 
 export const BREAK_DURATIONS = {

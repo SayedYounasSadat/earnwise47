@@ -27,20 +27,27 @@ const AnimatedNumber = memo(
     const [displayValue, setDisplayValue] = useState(value);
 
     useEffect(() => {
-      // Smooth animation for number changes
+      // Smooth spring-like animation using requestAnimationFrame
       const diff = value - displayValue;
-      if (Math.abs(diff) < 0.001) {
+      if (Math.abs(diff) < 0.0001) {
         setDisplayValue(value);
         return;
       }
 
-      const step = diff * 0.3;
-      const timeout = setTimeout(() => {
-        setDisplayValue((prev) => prev + step);
-      }, 16);
+      let raf: number;
+      const animate = () => {
+        setDisplayValue((prev) => {
+          const d = value - prev;
+          if (Math.abs(d) < 0.0001) return value;
+          // Ease factor: lerp 12% per frame for buttery smooth counting
+          return prev + d * 0.12;
+        });
+        raf = requestAnimationFrame(animate);
+      };
+      raf = requestAnimationFrame(animate);
 
-      return () => clearTimeout(timeout);
-    }, [value, displayValue]);
+      return () => cancelAnimationFrame(raf);
+    }, [value]);
 
     return (
       <span className={cn("tabular-nums", className)}>

@@ -13,10 +13,7 @@ import {
 } from "@/components/ui/popover";
 
 interface PomodoroTimerProps {
-  isMainTimerRunning: boolean;
-  onStartWork: () => void;
-  onPauseWork: () => void;
-  onResumeWork: () => void;
+  // Pomodoro is now a standalone focus tool - no work timer coupling
 }
 
 type PomodoroPhase = "work" | "shortBreak" | "longBreak" | "idle";
@@ -27,7 +24,7 @@ const DEFAULT_LONG_BREAK = 15;
 const DEFAULT_ROUNDS = 4;
 
 export const PomodoroTimer = memo(
-  ({ isMainTimerRunning, onStartWork, onPauseWork, onResumeWork }: PomodoroTimerProps) => {
+  ({}: PomodoroTimerProps) => {
     const [workMinutes, setWorkMinutes] = useState(DEFAULT_WORK);
     const [shortBreakMinutes, setShortBreakMinutes] = useState(DEFAULT_SHORT_BREAK);
     const [longBreakMinutes, setLongBreakMinutes] = useState(DEFAULT_LONG_BREAK);
@@ -66,13 +63,7 @@ export const PomodoroTimer = memo(
       setIsRunning(false);
 
       if (phase === "work") {
-        // Pause the main earnings timer during break
-        if (isMainTimerRunning) {
-          onPauseWork();
-        }
-
         if (currentRound >= totalRounds) {
-          // Long break after all rounds
           setPhase("longBreak");
           setSecondsLeft(longBreakMinutes * 60);
           toast({
@@ -87,7 +78,6 @@ export const PomodoroTimer = memo(
             description: `Round ${currentRound} done! Take ${shortBreakMinutes} minutes.`,
           });
         }
-        // Auto-start the break
         setIsRunning(true);
       } else if (phase === "shortBreak") {
         setCurrentRound((prev) => prev + 1);
@@ -97,10 +87,6 @@ export const PomodoroTimer = memo(
           title: "⏱️ Focus Time",
           description: `Round ${currentRound + 1} of ${totalRounds}. Let's go!`,
         });
-        // Resume earnings timer and auto-start
-        if (!isMainTimerRunning) {
-          onResumeWork();
-        }
         setIsRunning(true);
       } else if (phase === "longBreak") {
         setPhase("idle");
@@ -111,18 +97,13 @@ export const PomodoroTimer = memo(
           description: `You completed ${totalRounds} rounds of focused work!`,
         });
       }
-    }, [phase, currentRound, totalRounds, workMinutes, shortBreakMinutes, longBreakMinutes, isMainTimerRunning, onPauseWork, onResumeWork]);
+    }, [phase, currentRound, totalRounds, workMinutes, shortBreakMinutes, longBreakMinutes]);
 
     const startPomodoro = () => {
       setPhase("work");
       setCurrentRound(1);
       setSecondsLeft(workMinutes * 60);
       setIsRunning(true);
-
-      // Also start the main earnings timer
-      if (!isMainTimerRunning) {
-        onStartWork();
-      }
 
       toast({
         title: "🍅 Pomodoro Started",
