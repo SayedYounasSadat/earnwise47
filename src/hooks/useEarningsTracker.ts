@@ -331,22 +331,33 @@ export const useEarningsTracker = (userId?: string | null) => {
       .reduce((sum, s) => sum + s.earnings, 0) + calculateCurrentEarnings();
   }, [state.sessions, calculateCurrentEarnings]);
 
-  // Check for milestones
+  // Check for all-time high milestone only
   const checkMilestones = useCallback(
     (currentEarnings: number) => {
-      const milestone = Math.floor(currentEarnings);
-      if (milestone > state.lastMilestone && milestone > 0) {
-        setState((prev) => ({ ...prev, lastMilestone: milestone }));
-        
-        if (state.settings.notifications) {
-          toast({
-            title: "🎉 Milestone Reached!",
-            description: `You've earned $${milestone} today!`,
-          });
+      // Calculate all-time high from completed sessions
+      const allTimeHigh = state.sessions.reduce((max, s) => {
+        const dayEarnings = state.sessions
+          .filter((ss) => ss.date === s.date)
+          .reduce((sum, ss) => sum + ss.earnings, 0);
+        return Math.max(max, dayEarnings);
+      }, 0);
+
+      // Only notify if today's earnings beat the all-time daily record
+      if (currentEarnings > allTimeHigh && currentEarnings > 0 && allTimeHigh > 0) {
+        const rounded = Math.floor(currentEarnings);
+        if (rounded > state.lastMilestone) {
+          setState((prev) => ({ ...prev, lastMilestone: rounded }));
+          
+          if (state.settings.notifications) {
+            toast({
+              title: "🏆 New All-Time High!",
+              description: `You've beaten your daily record with $${currentEarnings.toFixed(2)}!`,
+            });
+          }
         }
       }
     },
-    [state.lastMilestone, state.settings.notifications]
+    [state.lastMilestone, state.settings.notifications, state.sessions]
   );
 
   // Timer tick - only runs when working AND not paused AND not on break
@@ -471,6 +482,15 @@ export const useEarningsTracker = (userId?: string | null) => {
       return;
     }
 
+    if (type === "rr" && (state.dailyBreakUsage.rrBreaksUsed ?? 0) >= 2) {
+      toast({
+        title: "❌ Break Unavailable",
+        description: "You've used all your restroom breaks today.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setState((prev) => ({
       ...prev,
       isOnBreak: true,
@@ -480,12 +500,13 @@ export const useEarningsTracker = (userId?: string | null) => {
       currentSessionStart: null,
     }));
 
-    const breakName = type === "lunch" ? "Lunch Break" : "Short Break";
-    const duration = type === "lunch" ? "30" : "15";
+    const breakNames: Record<string, string> = { lunch: "Lunch Break", short: "Short Break", rr: "Restroom Break" };
+    const breakName = breakNames[type] || "Break";
+    const durationText = type === "lunch" ? "30 min" : type === "short" ? "15 min" : "untimed";
 
     toast({
       title: `🍽️ ${breakName} Started`,
-      description: `Taking a ${duration}-minute break. Enjoy!`,
+      description: `Taking a ${durationText} break. Enjoy!`,
     });
   }, [state.isWorking, state.dailyBreakUsage]);
 
@@ -511,6 +532,8 @@ export const useEarningsTracker = (userId?: string | null) => {
         newBreakUsage.lunchUsed = true;
       } else if (prev.currentBreakType === "short") {
         newBreakUsage.shortBreaksUsed = Math.min(newBreakUsage.shortBreaksUsed + 1, 2);
+      } else if (prev.currentBreakType === "rr") {
+        newBreakUsage.rrBreaksUsed = Math.min((newBreakUsage.rrBreaksUsed ?? 0) + 1, 2);
       }
 
       return {
