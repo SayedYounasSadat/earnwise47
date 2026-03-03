@@ -1,8 +1,9 @@
 // Settings card for hourly rate, exchange rate, and daily goal
 import { memo, useState, useEffect } from "react";
-import { Settings as SettingsIcon, DollarSign, RefreshCw, Target, Clock } from "lucide-react";
+import { Settings as SettingsIcon, DollarSign, RefreshCw, Target, Clock, Timer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Settings } from "@/types/earnings";
 
 interface SettingsCardProps {
@@ -137,6 +138,19 @@ export const SettingsCard = memo(({ settings, onUpdate }: SettingsCardProps) => 
           <p className="text-xs text-muted-foreground">
             Overtime pay = hourly rate × {settings.overtimeMultiplier ?? 1.5}x
           </p>
+        </div>
+
+        {/* Show Shift Remaining Toggle */}
+        <div className="flex items-center justify-between pt-4 border-t border-border">
+          <Label htmlFor="showShiftRemaining" className="flex items-center gap-2 text-sm cursor-pointer">
+            <Timer className="w-4 h-4 text-muted-foreground" />
+            Show shift time remaining
+          </Label>
+          <Switch
+            id="showShiftRemaining"
+            checked={settings.showShiftRemaining ?? true}
+            onCheckedChange={(checked) => onUpdate({ showShiftRemaining: checked })}
+          />
         </div>
 
         {/* Quick stats */}
