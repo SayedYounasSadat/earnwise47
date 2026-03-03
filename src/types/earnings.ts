@@ -56,6 +56,7 @@ export interface Settings {
   darkMode: boolean;
   notifications: boolean;
   overtimeMultiplier: number; // e.g. 1.5x for overtime pay
+  showShiftRemaining: boolean; // show remaining shift time on timer
 }
 
 export interface AppState {
@@ -93,6 +94,7 @@ export const DEFAULT_SETTINGS: Settings = {
   darkMode: false,
   notifications: true,
   overtimeMultiplier: 1.5,
+  showShiftRemaining: true,
 };
 
 export const DEFAULT_SCHEDULE: ScheduleEntry[] = [

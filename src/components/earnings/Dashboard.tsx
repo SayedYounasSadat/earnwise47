@@ -153,7 +153,7 @@ export const Dashboard = () => {
                     seconds={currentDuration} 
                     isActive={isWorking} 
                     isPaused={isPaused}
-                    shiftRemaining={shiftRemaining}
+                    shiftRemaining={settings.showShiftRemaining !== false ? shiftRemaining : null}
                   />
                 </div>
 
