@@ -1,5 +1,5 @@
 // Main dashboard layout with tabs
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useEarningsTracker } from "@/hooks/useEarningsTracker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -76,21 +76,28 @@ export const Dashboard = () => {
     setSessionNotes("");
   }, [stopWork, sessionNotes]);
 
-  // Calculate remaining shift time
-  const shiftRemaining = useMemo(() => {
-    if (!isWorking) return null;
-    const now = new Date();
-    const day = now.getDay();
-    const todaySchedule = schedule.find(s => s.dayOfWeek === day && s.enabled);
-    if (!todaySchedule) return null;
-    const [endH, endM] = todaySchedule.endTime.split(":").map(Number);
-    const endMinutes = endH * 60 + endM;
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const diff = endMinutes - nowMinutes;
-    if (diff <= 0) return "Shift ended";
-    const h = Math.floor(diff / 60);
-    const m = diff % 60;
-    return h > 0 ? `${h}h ${m}m left` : `${m}m left`;
+  // Calculate remaining shift time - updates every minute
+  const [shiftRemaining, setShiftRemaining] = useState<string | null>(null);
+
+  useEffect(() => {
+    const calcRemaining = () => {
+      if (!isWorking) { setShiftRemaining(null); return; }
+      const now = new Date();
+      const day = now.getDay();
+      const todaySchedule = schedule.find(s => s.dayOfWeek === day && s.enabled);
+      if (!todaySchedule) { setShiftRemaining(null); return; }
+      const [endH, endM] = todaySchedule.endTime.split(":").map(Number);
+      const endMinutes = endH * 60 + endM;
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const diff = endMinutes - nowMinutes;
+      if (diff <= 0) { setShiftRemaining("Shift ended"); return; }
+      const h = Math.floor(diff / 60);
+      const m = diff % 60;
+      setShiftRemaining(h > 0 ? `${h}h ${m}m left` : `${m}m left`);
+    };
+    calcRemaining();
+    const timer = isWorking ? setInterval(calcRemaining, 30_000) : null;
+    return () => { if (timer) clearInterval(timer); };
   }, [isWorking, schedule]);
 
   return (

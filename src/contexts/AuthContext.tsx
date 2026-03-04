@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(result.user, { displayName });
-      toast({ title: "✅ Account Created", description: "Welcome to Earnings Tracker!" });
+      toast({ title: "✅ Account Created", description: "Welcome to EarnWise!" });
     } catch (error: any) {
       console.error("Sign-up error:", error);
       const message =
