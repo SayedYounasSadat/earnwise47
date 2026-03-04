@@ -1,6 +1,7 @@
 // Core hook for managing all earnings tracker state and logic
 // v2 – patched sync, timer, and date logic
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useOnlineStatus } from "./useOnlineStatus";
 import {
   AppState,
   WorkSession,
@@ -214,6 +215,32 @@ export const useEarningsTracker = (userId?: string | null) => {
   const saveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const cloudSaveRef = useRef<NodeJS.Timeout | null>(null);
   const syncResetRef = useRef<NodeJS.Timeout | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  // Sync on reconnect
+  const handleReconnect = useCallback(() => {
+    if (userId && cloudLoaded) {
+      setSyncStatus("syncing");
+      saveUserData(userId, stateRef.current).then((success) => {
+        setSyncStatus(success ? "synced" : "error");
+        if (syncResetRef.current) clearTimeout(syncResetRef.current);
+        syncResetRef.current = setTimeout(() => setSyncStatus("idle"), 3000);
+        if (success) {
+          toast({ title: "☁️ Back Online", description: "Data synced to cloud." });
+        }
+      });
+    }
+  }, [userId, cloudLoaded]);
+
+  const isOnline = useOnlineStatus(handleReconnect);
+
+  // Show offline toast
+  useEffect(() => {
+    if (!isOnline) {
+      toast({ title: "📡 Offline", description: "Changes are saved locally and will sync when you're back online." });
+    }
+  }, [isOnline]);
 
   // Load data from Firestore when user logs in
   useEffect(() => {
@@ -954,6 +981,7 @@ export const useEarningsTracker = (userId?: string | null) => {
     sessions: state.sessions,
     schedule: state.schedule,
     syncStatus,
+    isOnline,
     startWork,
     startBreak,
     endBreak,

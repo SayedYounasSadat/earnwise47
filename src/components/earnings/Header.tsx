@@ -30,7 +30,7 @@ const SyncIndicator = ({ status }: { status: "idle" | "syncing" | "synced" | "er
     idle: { icon: <Cloud className="w-4 h-4 text-muted-foreground" />, label: "Cloud connected" },
     syncing: { icon: <Loader2 className="w-4 h-4 text-primary animate-spin" />, label: "Syncing..." },
     synced: { icon: <Check className="w-4 h-4 text-accent" />, label: "All changes saved" },
-    error: { icon: <CloudOff className="w-4 h-4 text-destructive" />, label: "Sync failed – will retry" },
+    error: { icon: <CloudOff className="w-4 h-4 text-destructive" />, label: "Offline or sync failed – will retry when connected" },
   };
   const { icon, label } = config[status];
 

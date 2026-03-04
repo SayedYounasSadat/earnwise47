@@ -47,6 +47,7 @@ export const Dashboard = () => {
     sessions,
     schedule,
     syncStatus,
+    isOnline,
     startWork,
     startBreak,
     endBreak,
@@ -105,7 +106,7 @@ export const Dashboard = () => {
       <Header
         isDarkMode={settings.darkMode}
         onToggleDarkMode={toggleDarkMode}
-        syncStatus={syncStatus}
+        syncStatus={!isOnline ? "error" : syncStatus}
         user={user ? {
           displayName: user.displayName,
           email: user.email,
@@ -338,9 +339,11 @@ export const Dashboard = () => {
         {/* Footer */}
         <footer className="mt-8 pt-6 border-t border-border text-center text-sm text-muted-foreground">
           <p>
-            {user 
-              ? "☁️ Data syncs automatically to your account across all devices." 
-              : "✅ Data is automatically saved to your browser. Close and reopen anytime!"}
+            {!isOnline
+              ? "📡 You're offline. Changes are saved locally and will sync when reconnected."
+              : user 
+                ? "☁️ Data syncs automatically to your account across all devices." 
+                : "✅ Data is automatically saved to your browser. Close and reopen anytime!"}
           </p>
         </footer>
       </main>
