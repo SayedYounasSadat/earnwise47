@@ -255,19 +255,36 @@ export const useEarningsTracker = (userId?: string | null) => {
     loadCloud();
   }, [userId]);
 
-  // Debounced cloud save - saves to Firestore every 5 seconds when logged in
+  // Debounced cloud save - only on meaningful state changes (not timer ticks)
+  // We serialize a "signature" excluding volatile timer fields to avoid saving every second
+  const cloudSaveSignature = useRef("");
+
   useEffect(() => {
     if (!userId || !cloudLoaded) return;
+
+    // Build a lightweight signature excluding currentSessionDuration (changes every second)
+    const sig = JSON.stringify({
+      sessions: state.sessions.length,
+      lastSessionId: state.sessions[state.sessions.length - 1]?.id,
+      isWorking: state.isWorking,
+      isPaused: state.isPaused,
+      isOnBreak: state.isOnBreak,
+      settings: state.settings,
+      schedule: state.schedule,
+      breakUsage: state.dailyBreakUsage,
+    });
+
+    if (sig === cloudSaveSignature.current) return;
+    cloudSaveSignature.current = sig;
 
     if (cloudSaveRef.current) clearTimeout(cloudSaveRef.current);
     cloudSaveRef.current = setTimeout(async () => {
       setSyncStatus("syncing");
       const success = await saveUserData(userId, state);
       setSyncStatus(success ? "synced" : "error");
-      // Auto-reset to idle after 3 seconds
       if (syncResetRef.current) clearTimeout(syncResetRef.current);
       syncResetRef.current = setTimeout(() => setSyncStatus("idle"), 3000);
-    }, 5000);
+    }, 3000);
 
     return () => {
       if (cloudSaveRef.current) clearTimeout(cloudSaveRef.current);
@@ -331,19 +348,25 @@ export const useEarningsTracker = (userId?: string | null) => {
       .reduce((sum, s) => sum + s.earnings, 0) + calculateCurrentEarnings();
   }, [state.sessions, calculateCurrentEarnings]);
 
-  // Check for all-time high milestone only
+  // Check for all-time high milestone only (O(n) with pre-computed daily map)
   const checkMilestones = useCallback(
     (currentEarnings: number) => {
-      // Calculate all-time high from completed sessions
-      const allTimeHigh = state.sessions.reduce((max, s) => {
-        const dayEarnings = state.sessions
-          .filter((ss) => ss.date === s.date)
-          .reduce((sum, ss) => sum + ss.earnings, 0);
-        return Math.max(max, dayEarnings);
-      }, 0);
+      if (currentEarnings <= 0) return;
+      
+      // Pre-compute daily totals in O(n) instead of O(n²)
+      const dailyTotals = new Map<string, number>();
+      const today = getTodayDate();
+      for (const s of state.sessions) {
+        if (s.date === today) continue; // exclude today's sessions (we use currentEarnings for today)
+        dailyTotals.set(s.date, (dailyTotals.get(s.date) || 0) + s.earnings);
+      }
+      
+      let allTimeHigh = 0;
+      for (const total of dailyTotals.values()) {
+        if (total > allTimeHigh) allTimeHigh = total;
+      }
 
-      // Only notify if today's earnings beat the all-time daily record
-      if (currentEarnings > allTimeHigh && currentEarnings > 0 && allTimeHigh > 0) {
+      if (currentEarnings > allTimeHigh && allTimeHigh > 0) {
         const rounded = Math.floor(currentEarnings);
         if (rounded > state.lastMilestone) {
           setState((prev) => ({ ...prev, lastMilestone: rounded }));
@@ -411,14 +434,15 @@ export const useEarningsTracker = (userId?: string | null) => {
     };
   }, [state.isOnBreak, state.currentBreakStart]);
 
-  // Auto-save to localStorage every second (skip until cloud data loaded for logged-in users)
+  // Auto-save to localStorage (skip until cloud data loaded for logged-in users)
   const canSave = !userId || cloudLoaded;
 
+  // Save to localStorage every 5 seconds and on critical state changes
   useEffect(() => {
     if (!canSave) return;
     saveIntervalRef.current = setInterval(() => {
       saveStateLocal(state);
-    }, 1000);
+    }, 5000);
 
     return () => {
       if (saveIntervalRef.current) {
@@ -427,11 +451,11 @@ export const useEarningsTracker = (userId?: string | null) => {
     };
   }, [state, canSave]);
 
-  // Save immediately on critical changes
+  // Save immediately on critical changes (start/stop/pause, not timer ticks)
   useEffect(() => {
     if (!canSave) return;
     saveStateLocal(state);
-  }, [state.isWorking, state.isPaused, state.isOnBreak, state.currentSessionDuration, state.sessions, canSave]);
+  }, [state.isWorking, state.isPaused, state.isOnBreak, state.sessions, canSave]);
 
   // Check milestones on earnings change
   useEffect(() => {
@@ -605,9 +629,14 @@ export const useEarningsTracker = (userId?: string | null) => {
       const earnings = (duration / 3600) * state.settings.hourlyRate;
       const today = getTodayDate();
 
+      // Use actual session start if available, otherwise approximate
+      const actualStart = state.currentSessionStart 
+        ? state.currentSessionStart - ((state.accumulatedDuration || 0) * 1000)
+        : now - (duration * 1000);
+
       const newSession: WorkSession = {
         id: generateId(),
-        startTime: now - (duration * 1000),
+        startTime: actualStart,
         endTime: now,
         duration,
         earnings,
@@ -718,33 +747,73 @@ export const useEarningsTracker = (userId?: string | null) => {
     });
   }, [state.sessions]);
 
-  // Import data from JSON
+  // Import data from JSON with validation
   const importJSON = useCallback((file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
-        data.isOnBreak = data.isOnBreak ?? false;
-        data.currentBreakType = data.currentBreakType ?? null;
-        data.currentBreakStart = data.currentBreakStart ?? null;
-        data.currentSessionBreaks = data.currentSessionBreaks ?? [];
-        data.dailyBreakUsage = data.dailyBreakUsage ?? DEFAULT_BREAK_USAGE;
-        data.schedule = data.schedule?.map((s: ScheduleEntry) => ({
-          ...s,
-          dailyGoal: s.dailyGoal ?? data.settings?.dailyGoal ?? 100
-        })) ?? DEFAULT_SCHEDULE;
+        const raw = JSON.parse(e.target?.result as string);
+        
+        // Validate essential structure
+        if (typeof raw !== "object" || raw === null) throw new Error("Invalid format");
+        if (!Array.isArray(raw.sessions)) throw new Error("Missing sessions array");
+        if (typeof raw.settings !== "object" || raw.settings === null) throw new Error("Missing settings");
+        
+        // Validate each session has required fields
+        for (const s of raw.sessions) {
+          if (typeof s.id !== "string" || typeof s.startTime !== "number" || typeof s.duration !== "number" || typeof s.earnings !== "number") {
+            throw new Error("Invalid session data");
+          }
+          // Sanitize duration
+          s.duration = sanitizeDuration(s.duration);
+          s.earnings = Math.max(0, s.earnings);
+          s.notes = typeof s.notes === "string" ? s.notes.slice(0, 2000) : "";
+          s.breaks = Array.isArray(s.breaks) ? s.breaks : [];
+        }
+        
+        // Sanitize settings
+        const validSettings = { ...DEFAULT_SETTINGS };
+        if (typeof raw.settings.hourlyRate === "number" && raw.settings.hourlyRate >= 0 && raw.settings.hourlyRate <= 10000) {
+          validSettings.hourlyRate = raw.settings.hourlyRate;
+        }
+        if (typeof raw.settings.exchangeRate === "number" && raw.settings.exchangeRate > 0 && raw.settings.exchangeRate <= 1000000) {
+          validSettings.exchangeRate = raw.settings.exchangeRate;
+        }
+        if (typeof raw.settings.dailyGoal === "number" && raw.settings.dailyGoal >= 0) {
+          validSettings.dailyGoal = raw.settings.dailyGoal;
+        }
+        if (typeof raw.settings.currencyCode === "string") {
+          validSettings.currencyCode = raw.settings.currencyCode.slice(0, 10);
+        }
+        if (typeof raw.settings.darkMode === "boolean") validSettings.darkMode = raw.settings.darkMode;
+        if (typeof raw.settings.notifications === "boolean") validSettings.notifications = raw.settings.notifications;
+        if (typeof raw.settings.overtimeMultiplier === "number") validSettings.overtimeMultiplier = raw.settings.overtimeMultiplier;
+        if (typeof raw.settings.showShiftRemaining === "boolean") validSettings.showShiftRemaining = raw.settings.showShiftRemaining;
+
+        const data: AppState = {
+          ...getDefaultState(),
+          sessions: raw.sessions,
+          dailyLogs: Array.isArray(raw.dailyLogs) ? raw.dailyLogs : [],
+          settings: validSettings,
+          schedule: raw.schedule?.map((s: ScheduleEntry) => ({
+            ...s,
+            dailyGoal: s.dailyGoal ?? validSettings.dailyGoal
+          })) ?? DEFAULT_SCHEDULE,
+          dailyBreakUsage: raw.dailyBreakUsage ?? DEFAULT_BREAK_USAGE,
+          lastMilestone: typeof raw.lastMilestone === "number" ? raw.lastMilestone : 0,
+        };
         
         setState(data);
         saveStateLocal(data);
 
         toast({
           title: "📥 Import Complete",
-          description: "Your data has been restored.",
+          description: `Restored ${data.sessions.length} sessions.`,
         });
-      } catch (err) {
+      } catch (err: any) {
         toast({
           title: "❌ Import Failed",
-          description: "Invalid backup file.",
+          description: err?.message || "Invalid backup file.",
           variant: "destructive",
         });
       }

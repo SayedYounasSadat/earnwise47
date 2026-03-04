@@ -64,7 +64,7 @@ export const Header = memo(({ isDarkMode, onToggleDarkMode, syncStatus, user, on
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground tracking-tight">
-              Earnings Tracker
+              EarnWise
             </h1>
             <p className="text-xs text-muted-foreground">Track. Earn. Achieve.</p>
           </div>

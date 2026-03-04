@@ -101,7 +101,7 @@ const Auth = () => {
             <Wallet className="w-8 h-8 text-primary-foreground" />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Earnings Tracker</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">EarnWise</h1>
             <p className="text-sm text-muted-foreground">Track. Earn. Achieve.</p>
           </div>
         </div>
