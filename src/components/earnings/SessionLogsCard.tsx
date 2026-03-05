@@ -147,14 +147,26 @@ const LogEntry = memo(({ session, onDelete, onEdit }: { session: WorkSession; on
 LogEntry.displayName = "LogEntry";
 
 export const SessionLogsCard = memo(({ sessions, onClearLogs, onDeleteSession, onUpdateSession, onAddManualSession, hourlyRate = 15 }: SessionLogsCardProps) => {
-  const sortedSessions = [...sessions].sort((a, b) => b.startTime - a.startTime);
   const [editingSession, setEditingSession] = useState<WorkSession | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const existingProjects = useMemo(() => {
     const projects = sessions.map((s) => s.project).filter(Boolean) as string[];
     return [...new Set(projects)];
   }, [sessions]);
+
+  const filteredSessions = useMemo(() => {
+    const sorted = [...sessions].sort((a, b) => b.startTime - a.startTime);
+    if (!searchQuery.trim()) return sorted;
+    const q = searchQuery.toLowerCase();
+    return sorted.filter(s => 
+      s.notes?.toLowerCase().includes(q) ||
+      s.project?.toLowerCase().includes(q) ||
+      s.date?.includes(q) ||
+      new Date(s.startTime).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toLowerCase().includes(q)
+    );
+  }, [sessions, searchQuery]);
 
   const handleEditSave = (data: { date: string; startTime: number; endTime: number; notes: string; project: string }) => {
     if (editingSession && onUpdateSession) {
