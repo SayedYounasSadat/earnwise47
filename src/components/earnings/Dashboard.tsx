@@ -118,7 +118,7 @@ export const Dashboard = () => {
 
       <main className="container px-3 sm:px-4 py-3 sm:py-4 md:py-6 max-w-5xl mx-auto">
         {/* Hero Progress Bar - Always visible at top */}
-        <section className="mb-6 animate-fade-in">
+        <section className="mb-4 sm:mb-6 animate-fade-in">
           <ProgressCard 
             currentEarnings={todayEarnings} 
             dailyGoal={todayGoal}
