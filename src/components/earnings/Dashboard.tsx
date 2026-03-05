@@ -116,7 +116,7 @@ export const Dashboard = () => {
         onLogout={logout}
       />
 
-      <main className="container py-4 md:py-6">
+      <main className="container px-3 sm:px-4 py-3 sm:py-4 md:py-6 max-w-5xl mx-auto">
         {/* Hero Progress Bar - Always visible at top */}
         <section className="mb-6 animate-fade-in">
           <ProgressCard 
