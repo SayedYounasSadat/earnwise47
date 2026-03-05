@@ -24,6 +24,7 @@ import { PomodoroTimer } from "./PomodoroTimer";
 import { StreakAchievements } from "./StreakAchievements";
 import { OvertimeCard } from "./OvertimeCard";
 import { MissedTimeCard } from "./MissedTimeCard";
+import { WorldClockWidget } from "./WorldClockWidget";
 import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar } from "lucide-react";
 
