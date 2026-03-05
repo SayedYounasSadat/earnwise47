@@ -167,7 +167,7 @@ export const Dashboard = () => {
                 </div>
 
                 {/* Earnings */}
-                <div className="flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-border pt-8 md:pt-0 md:pl-8">
+                <div className="flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-border pt-6 sm:pt-8 md:pt-0 md:pl-8">
                   <EarningsDisplay
                     usdAmount={currentEarnings}
                     exchangeRate={settings.exchangeRate}
