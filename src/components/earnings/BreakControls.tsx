@@ -135,18 +135,18 @@ export const BreakControls = memo(
             disabled={shortBreaksAvailable === 0}
             variant="outline"
             className={cn(
-              "h-auto py-3 flex flex-col gap-1 rounded-xl",
+              "h-auto py-2 sm:py-3 flex flex-col gap-0.5 sm:gap-1 rounded-xl",
               "transition-all duration-200 hover:scale-105",
               shortBreaksAvailable > 0
                 ? "border-primary/50 hover:bg-primary/10 hover:border-primary"
                 : "opacity-50 cursor-not-allowed"
             )}
           >
-            <Coffee className="w-5 h-5 text-primary" />
-            <span className="font-semibold">Short</span>
-            <span className="text-xs text-muted-foreground">15 min</span>
+            <Coffee className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            <span className="font-semibold text-xs sm:text-sm">Short</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">15 min</span>
             <span className={cn(
-              "text-xs",
+              "text-[10px] sm:text-xs",
               shortBreaksAvailable > 0 ? "text-muted-foreground" : "text-destructive"
             )}>
               {shortBreaksAvailable}/2 left
