@@ -178,7 +178,7 @@ export const Dashboard = () => {
               </div>
 
               {/* Controls */}
-              <div className="mt-8 pt-6 border-t border-border">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border">
                 <TimerControls
                   isWorking={isWorking}
                   isPaused={isPaused}
