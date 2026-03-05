@@ -153,6 +153,22 @@ export const SettingsCard = memo(({ settings, onUpdate }: SettingsCardProps) => 
           />
         </div>
 
+        {/* Pacific DST Toggle */}
+        <div className="flex items-center justify-between pt-4 border-t border-border">
+          <Label htmlFor="usePacificDST" className="flex items-center gap-2 text-sm cursor-pointer">
+            <Globe className="w-4 h-4 text-muted-foreground" />
+            Use PDT (Daylight Saving)
+          </Label>
+          <Switch
+            id="usePacificDST"
+            checked={settings.usePacificDST ?? true}
+            onCheckedChange={(checked) => onUpdate({ usePacificDST: checked })}
+          />
+          <span className="text-xs text-muted-foreground ml-2">
+            {(settings.usePacificDST ?? true) ? "PDT (UTC-7)" : "PST (UTC-8)"}
+          </span>
+        </div>
+
         {/* Quick stats */}
         <div className="pt-4 border-t border-border">
           <p className="text-sm text-muted-foreground">
