@@ -154,8 +154,8 @@ export const Dashboard = () => {
           {/* Timer Tab - Main working area */}
           <TabsContent value="timer" className="space-y-6 animate-fade-in">
             {/* Timer and Earnings Hero */}
-            <section className="glass-card rounded-2xl p-6 md:p-8">
-              <div className="grid gap-8 md:grid-cols-2">
+            <section className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
+              <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
                 {/* Timer */}
                 <div className="flex flex-col items-center justify-center">
                   <TimerDisplay 
