@@ -1,8 +1,9 @@
 import { memo, useState, useMemo } from "react";
-import { History, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Trash2, Coffee, UtensilsCrossed, Pencil, Plus, Tag } from "lucide-react";
+import { History, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Trash2, Coffee, UtensilsCrossed, Pencil, Plus, Tag, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { WorkSession, BreakSession } from "@/types/earnings";
 import { cn } from "@/lib/utils";
 import {
