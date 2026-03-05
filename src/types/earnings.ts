@@ -57,6 +57,7 @@ export interface Settings {
   notifications: boolean;
   overtimeMultiplier: number; // e.g. 1.5x for overtime pay
   showShiftRemaining: boolean; // show remaining shift time on timer
+  usePacificDST: boolean; // true = PDT (summer), false = PST (winter)
 }
 
 export interface AppState {
