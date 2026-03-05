@@ -66,15 +66,15 @@ export const EarningsDisplay = memo(
     const convertedAmount = usdAmount * exchangeRate;
 
     return (
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center gap-4 sm:gap-6">
         {/* Main USD earnings */}
         <div className="text-center">
-          <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mb-2">
+          <p className="text-xs sm:text-sm text-muted-foreground font-medium uppercase tracking-wider mb-1.5 sm:mb-2">
             Current Session
           </p>
           <div
             className={cn(
-              "earnings-number text-5xl md:text-6xl lg:text-7xl transition-all duration-300",
+              "earnings-number text-3xl sm:text-5xl md:text-6xl lg:text-7xl transition-all duration-300",
               !isActive && "opacity-60"
             )}
           >
@@ -86,7 +86,7 @@ export const EarningsDisplay = memo(
         <div className="text-center">
           <div
             className={cn(
-              "text-2xl md:text-3xl font-bold text-primary transition-opacity duration-300",
+              "text-xl sm:text-2xl md:text-3xl font-bold text-primary transition-opacity duration-300",
               !isActive && "opacity-60"
             )}
           >

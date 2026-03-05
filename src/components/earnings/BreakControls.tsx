@@ -107,25 +107,25 @@ export const BreakControls = memo(
           <span className="text-sm font-medium text-muted-foreground">Take a Break</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {/* Lunch Break Button */}
           <Button
             onClick={() => onStartBreak("lunch")}
             disabled={!lunchAvailable}
             variant="outline"
             className={cn(
-              "h-auto py-3 flex flex-col gap-1 rounded-xl",
+              "h-auto py-2 sm:py-3 flex flex-col gap-0.5 sm:gap-1 rounded-xl",
               "transition-all duration-200 hover:scale-105",
               lunchAvailable
                 ? "border-warning/50 hover:bg-warning/10 hover:border-warning"
                 : "opacity-50 cursor-not-allowed"
             )}
           >
-            <UtensilsCrossed className="w-5 h-5 text-warning" />
-            <span className="font-semibold">Lunch</span>
-            <span className="text-xs text-muted-foreground">30 min</span>
+            <UtensilsCrossed className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
+            <span className="font-semibold text-xs sm:text-sm">Lunch</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">30 min</span>
             {!lunchAvailable && (
-              <span className="text-xs text-destructive">Used today</span>
+              <span className="text-[10px] sm:text-xs text-destructive">Used</span>
             )}
           </Button>
 
@@ -135,18 +135,18 @@ export const BreakControls = memo(
             disabled={shortBreaksAvailable === 0}
             variant="outline"
             className={cn(
-              "h-auto py-3 flex flex-col gap-1 rounded-xl",
+              "h-auto py-2 sm:py-3 flex flex-col gap-0.5 sm:gap-1 rounded-xl",
               "transition-all duration-200 hover:scale-105",
               shortBreaksAvailable > 0
                 ? "border-primary/50 hover:bg-primary/10 hover:border-primary"
                 : "opacity-50 cursor-not-allowed"
             )}
           >
-            <Coffee className="w-5 h-5 text-primary" />
-            <span className="font-semibold">Short</span>
-            <span className="text-xs text-muted-foreground">15 min</span>
+            <Coffee className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+            <span className="font-semibold text-xs sm:text-sm">Short</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">15 min</span>
             <span className={cn(
-              "text-xs",
+              "text-[10px] sm:text-xs",
               shortBreaksAvailable > 0 ? "text-muted-foreground" : "text-destructive"
             )}>
               {shortBreaksAvailable}/2 left
@@ -159,18 +159,18 @@ export const BreakControls = memo(
             disabled={rrBreaksAvailable === 0}
             variant="outline"
             className={cn(
-              "h-auto py-3 flex flex-col gap-1 rounded-xl",
+              "h-auto py-2 sm:py-3 flex flex-col gap-0.5 sm:gap-1 rounded-xl",
               "transition-all duration-200 hover:scale-105",
               rrBreaksAvailable > 0
                 ? "border-accent/50 hover:bg-accent/10 hover:border-accent"
                 : "opacity-50 cursor-not-allowed"
             )}
           >
-            <Bath className="w-5 h-5 text-accent" />
-            <span className="font-semibold">RR Out</span>
-            <span className="text-xs text-muted-foreground">Untimed</span>
+            <Bath className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+            <span className="font-semibold text-xs sm:text-sm">RR Out</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Untimed</span>
             <span className={cn(
-              "text-xs",
+              "text-[10px] sm:text-xs",
               rrBreaksAvailable > 0 ? "text-muted-foreground" : "text-destructive"
             )}>
               {rrBreaksAvailable}/2 left

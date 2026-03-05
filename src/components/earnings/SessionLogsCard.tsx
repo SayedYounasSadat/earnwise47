@@ -1,8 +1,9 @@
 import { memo, useState, useMemo } from "react";
-import { History, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Trash2, Coffee, UtensilsCrossed, Pencil, Plus, Tag } from "lucide-react";
+import { History, ChevronDown, ChevronUp, Clock, DollarSign, FileText, Trash2, Coffee, UtensilsCrossed, Pencil, Plus, Tag, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { WorkSession, BreakSession } from "@/types/earnings";
 import { cn } from "@/lib/utils";
 import {
@@ -146,14 +147,26 @@ const LogEntry = memo(({ session, onDelete, onEdit }: { session: WorkSession; on
 LogEntry.displayName = "LogEntry";
 
 export const SessionLogsCard = memo(({ sessions, onClearLogs, onDeleteSession, onUpdateSession, onAddManualSession, hourlyRate = 15 }: SessionLogsCardProps) => {
-  const sortedSessions = [...sessions].sort((a, b) => b.startTime - a.startTime);
   const [editingSession, setEditingSession] = useState<WorkSession | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const existingProjects = useMemo(() => {
     const projects = sessions.map((s) => s.project).filter(Boolean) as string[];
     return [...new Set(projects)];
   }, [sessions]);
+
+  const filteredSessions = useMemo(() => {
+    const sorted = [...sessions].sort((a, b) => b.startTime - a.startTime);
+    if (!searchQuery.trim()) return sorted;
+    const q = searchQuery.toLowerCase();
+    return sorted.filter(s => 
+      s.notes?.toLowerCase().includes(q) ||
+      s.project?.toLowerCase().includes(q) ||
+      s.date?.includes(q) ||
+      new Date(s.startTime).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toLowerCase().includes(q)
+    );
+  }, [sessions, searchQuery]);
 
   const handleEditSave = (data: { date: string; startTime: number; endTime: number; notes: string; project: string }) => {
     if (editingSession && onUpdateSession) {
@@ -204,16 +217,34 @@ export const SessionLogsCard = memo(({ sessions, onClearLogs, onDeleteSession, o
         </div>
       </div>
 
+      {/* Search bar */}
+      {sessions.length > 3 && (
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search by date, project, or notes..."
+            className="pl-9 bg-background h-9 text-sm"
+          />
+        </div>
+      )}
+
       {sessions.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           <History className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p>No sessions yet</p>
           <p className="text-sm">Start working to see your logs here</p>
         </div>
+      ) : filteredSessions.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <Search className="w-10 h-10 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No sessions match "{searchQuery}"</p>
+        </div>
       ) : (
-        <ScrollArea className="h-[300px] pr-4">
+        <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
           <div className="space-y-2">
-            {sortedSessions.map((session) => (
+            {filteredSessions.map((session) => (
               <LogEntry
                 key={session.id}
                 session={session}

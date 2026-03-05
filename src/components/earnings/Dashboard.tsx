@@ -116,9 +116,9 @@ export const Dashboard = () => {
         onLogout={logout}
       />
 
-      <main className="container py-4 md:py-6">
+      <main className="container px-3 sm:px-4 py-3 sm:py-4 md:py-6 max-w-5xl mx-auto">
         {/* Hero Progress Bar - Always visible at top */}
-        <section className="mb-6 animate-fade-in">
+        <section className="mb-4 sm:mb-6 animate-fade-in">
           <ProgressCard 
             currentEarnings={todayEarnings} 
             dailyGoal={todayGoal}
@@ -128,25 +128,25 @@ export const Dashboard = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="timer" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
-            <TabsTrigger value="timer" className="flex items-center gap-2">
-              <Home className="w-4 h-4" />
+          <TabsList className="grid w-full grid-cols-5 mb-4 sm:mb-6 h-10 sm:h-11">
+            <TabsTrigger value="timer" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+              <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Timer</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
+            <TabsTrigger value="analytics" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center gap-2">
-              <History className="w-4 h-4" />
+            <TabsTrigger value="logs" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+              <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Logs</span>
             </TabsTrigger>
-            <TabsTrigger value="schedule" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+            <TabsTrigger value="schedule" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Schedule</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
+            <TabsTrigger value="settings" className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm">
+              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
@@ -154,8 +154,8 @@ export const Dashboard = () => {
           {/* Timer Tab - Main working area */}
           <TabsContent value="timer" className="space-y-6 animate-fade-in">
             {/* Timer and Earnings Hero */}
-            <section className="glass-card rounded-2xl p-6 md:p-8">
-              <div className="grid gap-8 md:grid-cols-2">
+            <section className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
+              <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
                 {/* Timer */}
                 <div className="flex flex-col items-center justify-center">
                   <TimerDisplay 
@@ -167,7 +167,7 @@ export const Dashboard = () => {
                 </div>
 
                 {/* Earnings */}
-                <div className="flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-border pt-8 md:pt-0 md:pl-8">
+                <div className="flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-border pt-6 sm:pt-8 md:pt-0 md:pl-8">
                   <EarningsDisplay
                     usdAmount={currentEarnings}
                     exchangeRate={settings.exchangeRate}
@@ -178,7 +178,7 @@ export const Dashboard = () => {
               </div>
 
               {/* Controls */}
-              <div className="mt-8 pt-6 border-t border-border">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border">
                 <TimerControls
                   isWorking={isWorking}
                   isPaused={isPaused}

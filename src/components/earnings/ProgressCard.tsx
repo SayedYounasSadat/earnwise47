@@ -28,44 +28,44 @@ export const ProgressCard = memo(({ currentEarnings, dailyGoal, isWorking }: Pro
 
   return (
     <div className={cn(
-      "w-full rounded-2xl p-6 md:p-8 transition-all duration-500",
+      "w-full rounded-2xl p-4 sm:p-6 md:p-8 transition-all duration-500",
       isGoalReached 
         ? "bg-gradient-to-r from-success/20 via-success/10 to-success/20 border-2 border-success/30" 
         : "glass-card"
     )}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div className={cn(
-            "p-3 rounded-xl transition-all duration-300",
+            "p-2 sm:p-3 rounded-xl transition-all duration-300",
             isGoalReached ? "bg-success/20" : "bg-primary/10",
             isWorking && "animate-pulse"
           )}>
             <Target className={cn(
-              "w-6 h-6",
+              "w-5 h-5 sm:w-6 sm:h-6",
               isGoalReached ? "text-success" : "text-primary"
             )} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Daily Goal Progress</h2>
-            <p className={cn("text-sm font-medium flex items-center gap-1", tier.color)}>
-              <TierIcon className="w-4 h-4" />
+            <h2 className="text-base sm:text-xl font-bold text-foreground">Daily Goal</h2>
+            <p className={cn("text-xs sm:text-sm font-medium flex items-center gap-1", tier.color)}>
+              <TierIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {tier.label}
             </p>
           </div>
         </div>
 
         {isGoalReached && (
-          <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-success/20 text-success animate-scale-in">
-            <Trophy className="w-5 h-5" />
-            <span className="font-bold">Completed!</span>
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-success/20 text-success animate-scale-in">
+            <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="font-bold text-xs sm:text-sm">Done!</span>
           </div>
         )}
       </div>
 
       {/* Large Progress bar */}
-      <div className="relative mb-4">
-        <div className="h-8 md:h-10 rounded-full bg-muted overflow-hidden">
+      <div className="relative mb-3 sm:mb-4">
+        <div className="h-6 sm:h-8 md:h-10 rounded-full bg-muted overflow-hidden">
           <div
             className={cn(
               "h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden",
@@ -75,7 +75,6 @@ export const ProgressCard = memo(({ currentEarnings, dailyGoal, isWorking }: Pro
             )}
             style={{ width: `${progress}%` }}
           >
-            {/* Shimmer effect when working */}
             {isWorking && !isGoalReached && (
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" 
                 style={{ backgroundSize: "200% 100%" }} 
@@ -84,10 +83,9 @@ export const ProgressCard = memo(({ currentEarnings, dailyGoal, isWorking }: Pro
           </div>
         </div>
         
-        {/* Percentage overlay */}
         <div className="absolute inset-0 flex items-center justify-center">
           <span className={cn(
-            "text-lg md:text-xl font-bold tabular-nums",
+            "text-sm sm:text-lg md:text-xl font-bold tabular-nums",
             progress > 50 ? "text-white drop-shadow-md" : "text-foreground"
           )}>
             {progress.toFixed(1)}%
@@ -96,22 +94,22 @@ export const ProgressCard = memo(({ currentEarnings, dailyGoal, isWorking }: Pro
       </div>
 
       {/* Stats row */}
-      <div className="flex flex-wrap items-center justify-between gap-4 text-sm md:text-base">
-        <div className="flex items-center gap-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 text-sm">
+        <div className="flex items-center gap-3 sm:gap-6">
           <div>
-            <span className="text-muted-foreground">Earned: </span>
-            <span className="font-bold text-foreground text-lg">${currentEarnings.toFixed(2)}</span>
+            <span className="text-muted-foreground text-xs sm:text-sm">Earned: </span>
+            <span className="font-bold text-foreground text-base sm:text-lg">${currentEarnings.toFixed(2)}</span>
           </div>
           <div>
-            <span className="text-muted-foreground">Goal: </span>
-            <span className="font-bold text-foreground text-lg">${dailyGoal.toFixed(2)}</span>
+            <span className="text-muted-foreground text-xs sm:text-sm">Goal: </span>
+            <span className="font-bold text-foreground text-base sm:text-lg">${dailyGoal.toFixed(2)}</span>
           </div>
         </div>
 
         {!isGoalReached && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted/50">
-            <TrendingUp className="w-4 h-4 text-accent" />
-            <span className="font-semibold text-accent">${remaining.toFixed(2)} to go</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/50">
+            <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent" />
+            <span className="font-semibold text-accent text-xs sm:text-sm">${remaining.toFixed(2)} to go</span>
           </div>
         )}
       </div>
