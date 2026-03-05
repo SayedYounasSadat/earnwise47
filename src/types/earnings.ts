@@ -96,6 +96,7 @@ export const DEFAULT_SETTINGS: Settings = {
   notifications: true,
   overtimeMultiplier: 1.5,
   showShiftRemaining: true,
+  usePacificDST: true, // Default to PDT (March-November)
 };
 
 export const DEFAULT_SCHEDULE: ScheduleEntry[] = [
