@@ -1,6 +1,6 @@
 // Settings card for hourly rate, exchange rate, and daily goal
 import { memo, useState, useEffect } from "react";
-import { Settings as SettingsIcon, DollarSign, RefreshCw, Target, Clock, Timer } from "lucide-react";
+import { Settings as SettingsIcon, DollarSign, RefreshCw, Target, Clock, Timer, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
