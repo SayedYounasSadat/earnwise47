@@ -24,6 +24,7 @@ import { PomodoroTimer } from "./PomodoroTimer";
 import { StreakAchievements } from "./StreakAchievements";
 import { OvertimeCard } from "./OvertimeCard";
 import { MissedTimeCard } from "./MissedTimeCard";
+import { WorldClockWidget } from "./WorldClockWidget";
 import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar } from "lucide-react";
 
@@ -205,8 +206,8 @@ export const Dashboard = () => {
               )}
             </section>
 
-            {/* Quick Stats + Pomodoro */}
-            <div className="grid gap-6 md:grid-cols-2">
+            {/* Quick Stats + Pomodoro + Clock */}
+            <div className="grid gap-6 md:grid-cols-3">
               <TotalsCard
                 todayEarnings={todayEarnings}
                 weekEarnings={weekEarnings}
@@ -214,6 +215,7 @@ export const Dashboard = () => {
                 exchangeRate={settings.exchangeRate}
                 currencyCode={settings.currencyCode}
               />
+              <WorldClockWidget useDST={settings.usePacificDST ?? true} />
               <PomodoroTimer />
             </div>
 

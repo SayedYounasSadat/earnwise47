@@ -1,6 +1,6 @@
 // Settings card for hourly rate, exchange rate, and daily goal
 import { memo, useState, useEffect } from "react";
-import { Settings as SettingsIcon, DollarSign, RefreshCw, Target, Clock, Timer } from "lucide-react";
+import { Settings as SettingsIcon, DollarSign, RefreshCw, Target, Clock, Timer, Globe } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -151,6 +151,22 @@ export const SettingsCard = memo(({ settings, onUpdate }: SettingsCardProps) => 
             checked={settings.showShiftRemaining ?? true}
             onCheckedChange={(checked) => onUpdate({ showShiftRemaining: checked })}
           />
+        </div>
+
+        {/* Pacific DST Toggle */}
+        <div className="flex items-center justify-between pt-4 border-t border-border">
+          <Label htmlFor="usePacificDST" className="flex items-center gap-2 text-sm cursor-pointer">
+            <Globe className="w-4 h-4 text-muted-foreground" />
+            Use PDT (Daylight Saving)
+          </Label>
+          <Switch
+            id="usePacificDST"
+            checked={settings.usePacificDST ?? true}
+            onCheckedChange={(checked) => onUpdate({ usePacificDST: checked })}
+          />
+          <span className="text-xs text-muted-foreground ml-2">
+            {(settings.usePacificDST ?? true) ? "PDT (UTC-7)" : "PST (UTC-8)"}
+          </span>
         </div>
 
         {/* Quick stats */}

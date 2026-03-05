@@ -57,6 +57,7 @@ export interface Settings {
   notifications: boolean;
   overtimeMultiplier: number; // e.g. 1.5x for overtime pay
   showShiftRemaining: boolean; // show remaining shift time on timer
+  usePacificDST: boolean; // true = PDT (summer), false = PST (winter)
 }
 
 export interface AppState {
@@ -95,6 +96,7 @@ export const DEFAULT_SETTINGS: Settings = {
   notifications: true,
   overtimeMultiplier: 1.5,
   showShiftRemaining: true,
+  usePacificDST: true, // Default to PDT (March-November)
 };
 
 export const DEFAULT_SCHEDULE: ScheduleEntry[] = [
