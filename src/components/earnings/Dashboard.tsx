@@ -223,7 +223,10 @@ export const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border space-y-3">
+                <div className="flex items-center justify-center">
+                  <KeyboardShortcutsHint />
+                </div>
                 <TimerControls
                   isWorking={isWorking}
                   isPaused={isPaused}
