@@ -78,6 +78,16 @@ export const Dashboard = () => {
     setSessionNotes("");
   }, [stopWork, sessionNotes]);
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    isWorking, isPaused, isOnBreak,
+    onStart: startWork,
+    onStop: handleStop,
+    onPause: pauseWork,
+    onResume: resumeWork,
+    onReset: resetSession,
+  });
+
   // Calculate remaining shift time
   const [shiftRemaining, setShiftRemaining] = useState<string | null>(null);
 
