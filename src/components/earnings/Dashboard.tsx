@@ -25,6 +25,8 @@ import { StreakAchievements } from "./StreakAchievements";
 import { OvertimeCard } from "./OvertimeCard";
 import { MissedTimeCard } from "./MissedTimeCard";
 import { WorldClockWidget } from "./WorldClockWidget";
+import { KeyboardShortcutsHint } from "./KeyboardShortcutsHint";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar, Clock, DollarSign, Zap } from "lucide-react";
 
