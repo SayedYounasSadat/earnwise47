@@ -25,6 +25,8 @@ import { StreakAchievements } from "./StreakAchievements";
 import { OvertimeCard } from "./OvertimeCard";
 import { MissedTimeCard } from "./MissedTimeCard";
 import { WorldClockWidget } from "./WorldClockWidget";
+import { KeyboardShortcutsHint } from "./KeyboardShortcutsHint";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar, Clock, DollarSign, Zap } from "lucide-react";
 
@@ -75,6 +77,16 @@ export const Dashboard = () => {
     stopWork(sessionNotes);
     setSessionNotes("");
   }, [stopWork, sessionNotes]);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    isWorking, isPaused, isOnBreak,
+    onStart: startWork,
+    onStop: handleStop,
+    onPause: pauseWork,
+    onResume: resumeWork,
+    onReset: resetSession,
+  });
 
   // Calculate remaining shift time
   const [shiftRemaining, setShiftRemaining] = useState<string | null>(null);
@@ -211,7 +223,10 @@ export const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border space-y-3">
+                <div className="flex items-center justify-center">
+                  <KeyboardShortcutsHint />
+                </div>
                 <TimerControls
                   isWorking={isWorking}
                   isPaused={isPaused}
