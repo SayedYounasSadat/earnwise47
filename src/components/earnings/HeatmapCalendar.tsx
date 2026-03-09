@@ -8,7 +8,7 @@ interface HeatmapCalendarProps {
   sessions: WorkSession[];
 }
 
-const WEEKS_TO_SHOW = 16; // ~4 months
+const WEEKS_TO_SHOW = 16;
 const DAYS = ["", "Mon", "", "Wed", "", "Fri", ""];
 
 const getIntensityClass = (earnings: number, maxEarnings: number): string => {
@@ -21,15 +21,13 @@ const getIntensityClass = (earnings: number, maxEarnings: number): string => {
 };
 
 export const HeatmapCalendar = memo(({ sessions }: HeatmapCalendarProps) => {
-  const { grid, months, maxEarnings } = useMemo(() => {
+  const { grid, months, maxEarnings, summary } = useMemo(() => {
     const today = new Date();
     const totalDays = WEEKS_TO_SHOW * 7;
     const startDate = new Date(today);
     startDate.setDate(startDate.getDate() - totalDays + 1);
-    // Align to start of week (Sunday)
     startDate.setDate(startDate.getDate() - startDate.getDay());
 
-    // Build earnings map
     const earningsMap: Record<string, { earnings: number; hours: number; count: number }> = {};
     let max = 0;
 
@@ -45,7 +43,6 @@ export const HeatmapCalendar = memo(({ sessions }: HeatmapCalendarProps) => {
       }
     });
 
-    // Build grid (columns = weeks, rows = days of week)
     const weeks: { date: string; dayOfWeek: number; earnings: number; hours: number; count: number; isToday: boolean; isFuture: boolean }[][] = [];
     const monthLabels: { label: string; col: number }[] = [];
     let lastMonth = -1;
@@ -79,30 +76,40 @@ export const HeatmapCalendar = memo(({ sessions }: HeatmapCalendarProps) => {
       weeks.push(week);
     }
 
-    return { grid: weeks, months: monthLabels, maxEarnings: max || 1 };
+    // Summary stats for the period
+    const activeDays = Object.keys(earningsMap).length;
+    const totalEarnings = Object.values(earningsMap).reduce((s, d) => s + d.earnings, 0);
+
+    return { grid: weeks, months: monthLabels, maxEarnings: max || 1, summary: { activeDays, totalEarnings } };
   }, [sessions]);
 
   return (
-    <div className="glass-card rounded-xl p-6 card-hover">
-      <div className="flex items-center gap-2 mb-5">
-        <CalendarDays className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold text-foreground">Activity Heatmap</h3>
+    <div className="glass-card rounded-xl p-4 sm:p-6 card-hover">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-foreground">Activity Heatmap</h3>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span>{summary.activeDays} active days</span>
+          <span className="text-accent font-medium">${summary.totalEarnings.toFixed(0)} earned</span>
+        </div>
       </div>
 
-      {/* Month labels */}
-      <div className="flex ml-8 mb-1 text-xs text-muted-foreground">
+      {/* Month labels - fixed positioning */}
+      <div className="relative ml-8 mb-1 h-4 text-xs text-muted-foreground">
         {months.map((m, i) => (
           <span
             key={i}
             className="absolute"
-            style={{ marginLeft: `${m.col * 16}px` }}
+            style={{ left: `${m.col * 14}px` }}
           >
             {m.label}
           </span>
         ))}
       </div>
 
-      <div className="flex gap-0.5 mt-6 overflow-x-auto pb-2">
+      <div className="flex gap-0.5 overflow-x-auto pb-2">
         {/* Day labels */}
         <div className="flex flex-col gap-0.5 mr-1 shrink-0">
           {DAYS.map((label, i) => (
@@ -119,11 +126,11 @@ export const HeatmapCalendar = memo(({ sessions }: HeatmapCalendarProps) => {
               <Tooltip key={day.date} delayDuration={100}>
                 <TooltipTrigger asChild>
                   <div
-                    className={`h-3 w-3 rounded-sm transition-colors ${
+                    className={`h-3 w-3 rounded-sm transition-colors cursor-default ${
                       day.isFuture
                         ? "bg-transparent"
                         : day.isToday
-                        ? `${getIntensityClass(day.earnings, maxEarnings)} ring-1 ring-foreground/30`
+                        ? `${getIntensityClass(day.earnings, maxEarnings)} ring-2 ring-primary/40`
                         : getIntensityClass(day.earnings, maxEarnings)
                     }`}
                   />
