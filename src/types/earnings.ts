@@ -119,3 +119,64 @@ export const BREAK_DURATIONS = {
   lunch: 30 * 60, // 30 minutes in seconds
   short: 15 * 60, // 15 minutes in seconds
 } as const;
+
+// ─── Budgeting Types ─────────────────────────────────
+
+export type ExpenseCategory =
+  | "housing"
+  | "food"
+  | "transport"
+  | "utilities"
+  | "entertainment"
+  | "health"
+  | "education"
+  | "shopping"
+  | "subscriptions"
+  | "other";
+
+export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  housing: "Housing & Rent",
+  food: "Food & Groceries",
+  transport: "Transport",
+  utilities: "Utilities & Bills",
+  entertainment: "Entertainment",
+  health: "Health & Fitness",
+  education: "Education",
+  shopping: "Shopping",
+  subscriptions: "Subscriptions",
+  other: "Other",
+};
+
+export interface BudgetExpense {
+  id: string;
+  name: string;
+  amount: number;
+  category: ExpenseCategory;
+  date: string; // YYYY-MM-DD
+  recurring: boolean;
+  notes?: string;
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline?: string; // YYYY-MM-DD
+  color?: string;
+}
+
+export interface BudgetIncome {
+  id: string;
+  source: string;
+  amount: number;
+  date: string; // YYYY-MM-DD
+  recurring: boolean;
+}
+
+export interface BudgetState {
+  monthlyBudget: number;
+  expenses: BudgetExpense[];
+  incomes: BudgetIncome[];
+  savingsGoals: SavingsGoal[];
+}
