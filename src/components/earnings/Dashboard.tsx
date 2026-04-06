@@ -277,6 +277,11 @@ export const Dashboard = () => {
             />
           </TabsContent>
 
+          {/* Budget Tab */}
+          <TabsContent value="budget" className="animate-fade-in">
+            <BudgetTab />
+          </TabsContent>
+
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-4 sm:space-y-6 animate-fade-in">
             <EarningsChart sessions={sessions} />
