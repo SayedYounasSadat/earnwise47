@@ -25,7 +25,13 @@ const saveBudget = (state: BudgetState) => {
   } catch { /* ignore */ }
 };
 
-export const useBudget = () => {
+interface UseBudgetOptions {
+  /** Optional auto-synced earnings (e.g. from work sessions this month). */
+  syncedEarnings?: { source: string; amount: number; date: string }[];
+}
+
+export const useBudget = (options: UseBudgetOptions = {}) => {
+  const { syncedEarnings = [] } = options;
   const [state, setState] = useState<BudgetState>(loadBudget);
 
   const persist = useCallback((next: BudgetState) => {
@@ -46,6 +52,14 @@ export const useBudget = () => {
     toast.success("Expense added");
   }, [state, persist]);
 
+  const updateExpense = useCallback((id: string, updates: Partial<Omit<BudgetExpense, "id">>) => {
+    persist({
+      ...state,
+      expenses: state.expenses.map(e => e.id === id ? { ...e, ...updates } : e),
+    });
+    toast.success("Expense updated");
+  }, [state, persist]);
+
   const deleteExpense = useCallback((id: string) => {
     persist({ ...state, expenses: state.expenses.filter(e => e.id !== id) });
     toast.success("Expense deleted");
@@ -56,6 +70,14 @@ export const useBudget = () => {
     const income: BudgetIncome = { ...data, id: generateId() };
     persist({ ...state, incomes: [income, ...state.incomes] });
     toast.success("Income added");
+  }, [state, persist]);
+
+  const updateIncome = useCallback((id: string, updates: Partial<Omit<BudgetIncome, "id">>) => {
+    persist({
+      ...state,
+      incomes: state.incomes.map(i => i.id === id ? { ...i, ...updates } : i),
+    });
+    toast.success("Income updated");
   }, [state, persist]);
 
   const deleteIncome = useCallback((id: string) => {
@@ -82,29 +104,54 @@ export const useBudget = () => {
     toast.success("Savings goal deleted");
   }, [state, persist]);
 
-  // Computed stats for current month
+  // Computed stats for current month — merges manual + synced incomes
   const monthStats = useMemo(() => {
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const monthExpenses = state.expenses.filter(e => e.date.startsWith(monthKey));
-    const monthIncomes = state.incomes.filter(i => i.date.startsWith(monthKey));
+
+    // Build virtual incomes from synced earnings (read-only, prefixed id)
+    const virtualIncomes: BudgetIncome[] = syncedEarnings
+      .filter(e => e.date.startsWith(monthKey))
+      .map((e, i) => ({
+        id: `synced-${i}`,
+        source: e.source,
+        amount: e.amount,
+        date: e.date,
+        recurring: false,
+      }));
+
+    const manualMonthIncomes = state.incomes.filter(i => i.date.startsWith(monthKey));
+    const monthIncomes = [...virtualIncomes, ...manualMonthIncomes];
+
     const totalExpenses = monthExpenses.reduce((s, e) => s + e.amount, 0);
     const totalIncome = monthIncomes.reduce((s, i) => s + i.amount, 0);
+    const syncedIncomeTotal = virtualIncomes.reduce((s, i) => s + i.amount, 0);
     const remaining = state.monthlyBudget - totalExpenses;
     const byCategory = monthExpenses.reduce<Record<string, number>>((acc, e) => {
       acc[e.category] = (acc[e.category] || 0) + e.amount;
       return acc;
     }, {});
-    return { totalExpenses, totalIncome, remaining, byCategory, monthExpenses, monthIncomes };
-  }, [state]);
+    return {
+      totalExpenses,
+      totalIncome,
+      syncedIncomeTotal,
+      remaining,
+      byCategory,
+      monthExpenses,
+      monthIncomes,
+    };
+  }, [state, syncedEarnings]);
 
   return {
     ...state,
     monthStats,
     setMonthlyBudget,
     addExpense,
+    updateExpense,
     deleteExpense,
     addIncome,
+    updateIncome,
     deleteIncome,
     addSavingsGoal,
     updateSavingsGoal,
