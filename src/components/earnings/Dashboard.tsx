@@ -27,6 +27,7 @@ import { MissedTimeCard } from "./MissedTimeCard";
 import { WorldClockWidget } from "./WorldClockWidget";
 import { KeyboardShortcutsHint } from "./KeyboardShortcutsHint";
 import { BudgetTab } from "./BudgetTab";
+import { FinancialHealthCard } from "./FinancialHealthCard";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { generatePDFReport } from "@/utils/pdfExport";
 import { Home, BarChart3, History, Settings, Calendar, Clock, DollarSign, Zap, Wallet } from "lucide-react";
@@ -271,6 +272,8 @@ export const Dashboard = () => {
               <PomodoroTimer />
             </div>
 
+            <FinancialHealthCard sessions={sessions} />
+
             <NotesCard
               onSaveNotes={(notes) => setSessionNotes(notes)}
               isWorking={isWorking}
@@ -279,7 +282,7 @@ export const Dashboard = () => {
 
           {/* Budget Tab */}
           <TabsContent value="budget" className="animate-fade-in">
-            <BudgetTab />
+            <BudgetTab sessions={sessions} />
           </TabsContent>
 
           {/* Analytics Tab */}
