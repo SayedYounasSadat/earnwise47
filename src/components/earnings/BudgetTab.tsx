@@ -41,6 +41,7 @@ import { format } from "date-fns";
 import { CategoryPieChart } from "./CategoryPieChart";
 import { BudgetInsights } from "./BudgetInsights";
 import { EditBudgetEntryDialog } from "./EditBudgetEntryDialog";
+import { MonthlyTrendsChart } from "./MonthlyTrendsChart";
 
 interface BudgetTabProps {
   /** Optional work sessions used to auto-sync earnings as income. */
