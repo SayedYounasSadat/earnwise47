@@ -41,6 +41,7 @@ import { format } from "date-fns";
 import { CategoryPieChart } from "./CategoryPieChart";
 import { BudgetInsights } from "./BudgetInsights";
 import { EditBudgetEntryDialog } from "./EditBudgetEntryDialog";
+import { MonthlyTrendsChart } from "./MonthlyTrendsChart";
 
 interface BudgetTabProps {
   /** Optional work sessions used to auto-sync earnings as income. */
@@ -361,6 +362,8 @@ export const BudgetTab = memo(({ sessions = [] }: BudgetTabProps) => {
 
   const {
     monthlyBudget,
+    expenses,
+    incomes,
     savingsGoals,
     monthStats,
     setMonthlyBudget,
@@ -481,6 +484,10 @@ export const BudgetTab = memo(({ sessions = [] }: BudgetTabProps) => {
           topCategory={topCategory}
         />
       </div>
+
+      {/* 6-month trends */}
+      <MonthlyTrendsChart expenses={expenses} incomes={incomes} sessions={sessions} />
+
 
       {/* Set budget */}
       <div className="glass-card rounded-xl p-4">
