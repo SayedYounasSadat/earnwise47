@@ -10,6 +10,8 @@ import {
   DollarSign,
   ArrowUpRight,
   ArrowDownRight,
+  Pencil,
+  Zap,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,9 +34,18 @@ import {
   BudgetExpense,
   BudgetIncome,
   SavingsGoal,
+  WorkSession,
 } from "@/types/earnings";
 import { useBudget } from "@/hooks/useBudget";
 import { format } from "date-fns";
+import { CategoryPieChart } from "./CategoryPieChart";
+import { BudgetInsights } from "./BudgetInsights";
+import { EditBudgetEntryDialog } from "./EditBudgetEntryDialog";
+
+interface BudgetTabProps {
+  /** Optional work sessions used to auto-sync earnings as income. */
+  sessions?: WorkSession[];
+}
 
 // ─── Small reusable KPI card ─────────────────────
 const KpiCard = memo(
@@ -334,24 +345,53 @@ const AddSavingsGoalForm = memo(
 AddSavingsGoalForm.displayName = "AddSavingsGoalForm";
 
 // ─── Main Budget Tab ─────────────────────
-export const BudgetTab = memo(() => {
+export const BudgetTab = memo(({ sessions = [] }: BudgetTabProps) => {
+  // Build synced earnings from work sessions for the current month
+  const syncedEarnings = useMemo(() => {
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return sessions
+      .filter((s) => s.date.startsWith(monthKey) && s.earnings > 0)
+      .map((s) => ({
+        source: s.project ? `Work: ${s.project}` : "Work Session",
+        amount: s.earnings,
+        date: s.date,
+      }));
+  }, [sessions]);
+
   const {
     monthlyBudget,
-    expenses,
-    incomes,
     savingsGoals,
     monthStats,
     setMonthlyBudget,
     addExpense,
+    updateExpense,
     deleteExpense,
     addIncome,
+    updateIncome,
     deleteIncome,
     addSavingsGoal,
     updateSavingsGoal,
     deleteSavingsGoal,
-  } = useBudget();
+  } = useBudget({ syncedEarnings });
 
   const [budgetInput, setBudgetInput] = useState(monthlyBudget > 0 ? monthlyBudget.toString() : "");
+
+  // Edit dialog state
+  const [editMode, setEditMode] = useState<"expense" | "income">("expense");
+  const [editEntry, setEditEntry] = useState<BudgetExpense | BudgetIncome | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+
+  const openEdit = (mode: "expense" | "income", entry: BudgetExpense | BudgetIncome) => {
+    setEditMode(mode);
+    setEditEntry(entry);
+    setEditOpen(true);
+  };
+
+  const handleEditSave = (id: string, updates: any) => {
+    if (editMode === "expense") updateExpense(id, updates);
+    else updateIncome(id, updates);
+  };
 
   const handleBudgetSet = () => {
     const amt = parseFloat(budgetInput);
@@ -367,6 +407,10 @@ export const BudgetTab = memo(() => {
         pct: monthStats.totalExpenses > 0 ? (amount / monthStats.totalExpenses) * 100 : 0,
       }));
   }, [monthStats]);
+
+  const topCategory = categoryBreakdown[0]
+    ? { category: categoryBreakdown[0].category, amount: categoryBreakdown[0].amount }
+    : null;
 
   const netFlow = monthStats.totalIncome - monthStats.totalExpenses;
   const budgetUsedPct = monthlyBudget > 0 ? (monthStats.totalExpenses / monthlyBudget) * 100 : 0;
@@ -392,6 +436,11 @@ export const BudgetTab = memo(() => {
           label="Income"
           value={`$${monthStats.totalIncome.toFixed(2)}`}
           accent="text-accent"
+          sub={
+            monthStats.syncedIncomeTotal > 0
+              ? `+$${monthStats.syncedIncomeTotal.toFixed(0)} from work`
+              : undefined
+          }
         />
         <KpiCard
           icon={<TrendingUp className="w-3.5 h-3.5" />}
@@ -421,6 +470,17 @@ export const BudgetTab = memo(() => {
           </p>
         </div>
       )}
+
+      {/* Pie chart + insights */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <CategoryPieChart data={categoryBreakdown} total={monthStats.totalExpenses} />
+        <BudgetInsights
+          totalIncome={monthStats.totalIncome}
+          totalExpenses={monthStats.totalExpenses}
+          monthlyBudget={monthlyBudget}
+          topCategory={topCategory}
+        />
+      </div>
 
       {/* Set budget */}
       <div className="glass-card rounded-xl p-4">
@@ -465,7 +525,7 @@ export const BudgetTab = memo(() => {
         <TabsContent value="expenses" className="space-y-4 mt-4">
           <AddExpenseForm onAdd={addExpense} />
 
-          {/* Category breakdown */}
+          {/* Category breakdown bars */}
           {categoryBreakdown.length > 0 && (
             <div className="glass-card rounded-xl p-4 space-y-3">
               <h4 className="font-semibold text-foreground text-sm">Spending by Category</h4>
@@ -520,7 +580,7 @@ export const BudgetTab = memo(() => {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1 shrink-0">
                           <span className="font-bold text-destructive tabular-nums text-sm">
                             -${expense.amount.toFixed(2)}
                           </span>
@@ -528,7 +588,17 @@ export const BudgetTab = memo(() => {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => openEdit("expense", expense)}
+                            aria-label="Edit expense"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => deleteExpense(expense.id)}
+                            aria-label="Delete expense"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -546,7 +616,15 @@ export const BudgetTab = memo(() => {
           <AddIncomeForm onAdd={addIncome} />
 
           <div className="glass-card rounded-xl p-4">
-            <h4 className="font-semibold text-foreground text-sm mb-3">Recent Income</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold text-foreground text-sm">Recent Income</h4>
+              {monthStats.syncedIncomeTotal > 0 && (
+                <Badge variant="outline" className="text-[10px] gap-1">
+                  <Zap className="w-3 h-3" />
+                  Auto-synced from work
+                </Badge>
+              )}
+            </div>
             {monthStats.monthIncomes.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">
                 No income recorded this month.
@@ -556,39 +634,64 @@ export const BudgetTab = memo(() => {
                 <div className="space-y-2">
                   {monthStats.monthIncomes
                     .sort((a, b) => b.date.localeCompare(a.date))
-                    .map((income) => (
-                      <div
-                        key={income.id}
-                        className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50 group"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {income.source}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{income.date}</span>
-                            {income.recurring && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                Recurring
-                              </Badge>
+                    .map((income) => {
+                      const isSynced = income.id.startsWith("synced-");
+                      return (
+                        <div
+                          key={income.id}
+                          className={`flex items-center justify-between p-2.5 rounded-lg group ${
+                            isSynced ? "bg-primary/5 border border-primary/20" : "bg-muted/50"
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate flex items-center gap-1.5">
+                              {isSynced && <Zap className="w-3 h-3 text-primary shrink-0" />}
+                              {income.source}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>{income.date}</span>
+                              {income.recurring && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                  Recurring
+                                </Badge>
+                              )}
+                              {isSynced && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                  Auto
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="font-bold text-accent tabular-nums text-sm">
+                              +${income.amount.toFixed(2)}
+                            </span>
+                            {!isSynced && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => openEdit("income", income)}
+                                  aria-label="Edit income"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => deleteIncome(income.id)}
+                                  aria-label="Delete income"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="font-bold text-accent tabular-nums text-sm">
-                            +${income.amount.toFixed(2)}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => deleteIncome(income.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                 </div>
               </ScrollArea>
             )}
@@ -620,6 +723,14 @@ export const BudgetTab = memo(() => {
           )}
         </TabsContent>
       </Tabs>
+
+      <EditBudgetEntryDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode={editMode}
+        entry={editEntry}
+        onSave={handleEditSave}
+      />
     </div>
   );
 });
