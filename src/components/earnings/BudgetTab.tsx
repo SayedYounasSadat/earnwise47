@@ -362,6 +362,8 @@ export const BudgetTab = memo(({ sessions = [] }: BudgetTabProps) => {
 
   const {
     monthlyBudget,
+    expenses,
+    incomes,
     savingsGoals,
     monthStats,
     setMonthlyBudget,
