@@ -485,6 +485,10 @@ export const BudgetTab = memo(({ sessions = [] }: BudgetTabProps) => {
         />
       </div>
 
+      {/* 6-month trends */}
+      <MonthlyTrendsChart expenses={expenses} incomes={incomes} sessions={sessions} />
+
+
       {/* Set budget */}
       <div className="glass-card rounded-xl p-4">
         <h4 className="font-semibold text-foreground text-sm flex items-center gap-2 mb-3">
