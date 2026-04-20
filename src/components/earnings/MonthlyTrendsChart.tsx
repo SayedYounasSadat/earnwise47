@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -11,6 +11,8 @@ import {
 } from "recharts";
 import { TrendingUp } from "lucide-react";
 import { BudgetExpense, BudgetIncome, WorkSession } from "@/types/earnings";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface MonthlyTrendsChartProps {
   expenses: BudgetExpense[];
@@ -26,15 +28,23 @@ interface MonthBucket {
   net: number;
 }
 
+type RangeOption = 3 | 6 | 12;
+const RANGE_OPTIONS: RangeOption[] = [3, 6, 12];
+
 export const MonthlyTrendsChart = memo(
   ({ expenses, incomes, sessions = [] }: MonthlyTrendsChartProps) => {
+    const [range, setRange] = useState<RangeOption>(6);
+
     const data = useMemo<MonthBucket[]>(() => {
       const months: MonthBucket[] = [];
       const now = new Date();
-      for (let i = 5; i >= 0; i--) {
+      for (let i = range - 1; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        const label = d.toLocaleDateString(undefined, { month: "short" });
+        const label =
+          range === 12
+            ? d.toLocaleDateString(undefined, { month: "short", year: "2-digit" })
+            : d.toLocaleDateString(undefined, { month: "short" });
         months.push({ key, label, income: 0, expenses: 0, net: 0 });
       }
       const map = new Map(months.map((m) => [m.key, m]));
@@ -59,16 +69,36 @@ export const MonthlyTrendsChart = memo(
         m.net = m.income - m.expenses;
       });
       return months;
-    }, [expenses, incomes, sessions]);
+    }, [expenses, incomes, sessions, range]);
 
     const hasData = data.some((d) => d.income > 0 || d.expenses > 0);
 
     return (
       <div className="glass-card rounded-xl p-4 space-y-3">
-        <h4 className="font-semibold text-foreground text-sm flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-primary" />
-          6-Month Trends
-        </h4>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h4 className="font-semibold text-foreground text-sm flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            {range}-Month Trends
+          </h4>
+          <div className="inline-flex items-center gap-1 p-0.5 rounded-md bg-muted/60">
+            {RANGE_OPTIONS.map((opt) => (
+              <Button
+                key={opt}
+                size="sm"
+                variant="ghost"
+                onClick={() => setRange(opt)}
+                className={cn(
+                  "h-7 px-2.5 text-xs font-medium",
+                  range === opt
+                    ? "bg-background text-foreground shadow-sm hover:bg-background"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt}M
+              </Button>
+            ))}
+          </div>
+        </div>
         {!hasData ? (
           <p className="text-xs text-muted-foreground py-8 text-center">
             No data yet. Add expenses or income to see trends.
@@ -83,6 +113,7 @@ export const MonthlyTrendsChart = memo(
                   tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                   axisLine={{ stroke: "hsl(var(--border))" }}
                   tickLine={false}
+                  interval={range === 12 ? 1 : 0}
                 />
                 <YAxis
                   tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
