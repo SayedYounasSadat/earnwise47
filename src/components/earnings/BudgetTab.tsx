@@ -521,6 +521,9 @@ export const BudgetTab = memo(({ sessions = [] }: BudgetTabProps) => {
         <YearOverYearCard expenses={expenses} incomes={incomes} sessions={sessions} />
       </div>
 
+      {/* Debt tracker */}
+      <DebtTrackerCard />
+
       {/* Export */}
       <div className="flex justify-end">
         <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={expenses.length === 0 && incomes.length === 0}>
