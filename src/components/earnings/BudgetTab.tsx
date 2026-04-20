@@ -45,6 +45,7 @@ import { EditBudgetEntryDialog } from "./EditBudgetEntryDialog";
 import { MonthlyTrendsChart } from "./MonthlyTrendsChart";
 import { UpcomingBillsCard } from "./UpcomingBillsCard";
 import { YearOverYearCard } from "./YearOverYearCard";
+import { DebtTrackerCard } from "./DebtTrackerCard";
 
 interface BudgetTabProps {
   /** Optional work sessions used to auto-sync earnings as income. */
@@ -519,6 +520,9 @@ export const BudgetTab = memo(({ sessions = [] }: BudgetTabProps) => {
         <UpcomingBillsCard expenses={expenses} />
         <YearOverYearCard expenses={expenses} incomes={incomes} sessions={sessions} />
       </div>
+
+      {/* Debt tracker */}
+      <DebtTrackerCard />
 
       {/* Export */}
       <div className="flex justify-end">

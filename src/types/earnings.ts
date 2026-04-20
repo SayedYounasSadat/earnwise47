@@ -180,3 +180,26 @@ export interface BudgetState {
   incomes: BudgetIncome[];
   savingsGoals: SavingsGoal[];
 }
+
+// ─── Debt Tracking ────────────────────────────
+export type DebtType = "credit_card" | "loan" | "mortgage" | "student" | "personal" | "other";
+
+export const DEBT_TYPE_LABELS: Record<DebtType, string> = {
+  credit_card: "Credit Card",
+  loan: "Loan",
+  mortgage: "Mortgage",
+  student: "Student Loan",
+  personal: "Personal Debt",
+  other: "Other",
+};
+
+export interface Debt {
+  id: string;
+  name: string;
+  type: DebtType;
+  originalBalance: number;
+  currentBalance: number;
+  interestRate: number; // annual %, e.g. 18.5
+  minimumPayment: number;
+  createdAt: string; // YYYY-MM-DD
+}
