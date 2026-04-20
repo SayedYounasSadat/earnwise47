@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   BudgetState,
   BudgetExpense,
@@ -8,8 +8,14 @@ import {
 import { toast } from "sonner";
 
 const STORAGE_KEY = "earnwise-budget";
+const ALERT_KEY = "earnwise-budget-alerts";
+const RECURRING_KEY = "earnwise-budget-recurring-month";
 
 const generateId = () => Math.random().toString(36).slice(2, 10);
+const currentMonthKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
 
 const loadBudget = (): BudgetState => {
   try {
