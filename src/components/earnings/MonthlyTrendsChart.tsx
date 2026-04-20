@@ -69,16 +69,36 @@ export const MonthlyTrendsChart = memo(
         m.net = m.income - m.expenses;
       });
       return months;
-    }, [expenses, incomes, sessions]);
+    }, [expenses, incomes, sessions, range]);
 
     const hasData = data.some((d) => d.income > 0 || d.expenses > 0);
 
     return (
       <div className="glass-card rounded-xl p-4 space-y-3">
-        <h4 className="font-semibold text-foreground text-sm flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-primary" />
-          6-Month Trends
-        </h4>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h4 className="font-semibold text-foreground text-sm flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            {range}-Month Trends
+          </h4>
+          <div className="inline-flex items-center gap-1 p-0.5 rounded-md bg-muted/60">
+            {RANGE_OPTIONS.map((opt) => (
+              <Button
+                key={opt}
+                size="sm"
+                variant="ghost"
+                onClick={() => setRange(opt)}
+                className={cn(
+                  "h-7 px-2.5 text-xs font-medium",
+                  range === opt
+                    ? "bg-background text-foreground shadow-sm hover:bg-background"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt}M
+              </Button>
+            ))}
+          </div>
+        </div>
         {!hasData ? (
           <p className="text-xs text-muted-foreground py-8 text-center">
             No data yet. Add expenses or income to see trends.
@@ -93,6 +113,7 @@ export const MonthlyTrendsChart = memo(
                   tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                   axisLine={{ stroke: "hsl(var(--border))" }}
                   tickLine={false}
+                  interval={range === 12 ? 1 : 0}
                 />
                 <YAxis
                   tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
