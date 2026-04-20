@@ -419,6 +419,29 @@ export const BudgetTab = memo(({ sessions = [] }: BudgetTabProps) => {
   const netFlow = monthStats.totalIncome - monthStats.totalExpenses;
   const budgetUsedPct = monthlyBudget > 0 ? (monthStats.totalExpenses / monthlyBudget) * 100 : 0;
 
+  const handleExportCSV = () => {
+    const escape = (v: string | number) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows: string[] = ["Type,Date,Name/Source,Category,Amount,Recurring"];
+    expenses.forEach((e) =>
+      rows.push(["Expense", e.date, e.name, e.category, e.amount.toFixed(2), e.recurring ? "Yes" : "No"].map(escape).join(","))
+    );
+    incomes.forEach((i) =>
+      rows.push(["Income", i.date, i.source, "", i.amount.toFixed(2), i.recurring ? "Yes" : "No"].map(escape).join(","))
+    );
+    const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `budget-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* KPI Row */}
