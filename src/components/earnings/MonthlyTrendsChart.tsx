@@ -11,6 +11,8 @@ import {
 } from "recharts";
 import { TrendingUp } from "lucide-react";
 import { BudgetExpense, BudgetIncome, WorkSession } from "@/types/earnings";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface MonthlyTrendsChartProps {
   expenses: BudgetExpense[];
