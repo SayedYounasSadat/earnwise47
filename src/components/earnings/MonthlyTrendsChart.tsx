@@ -28,15 +28,23 @@ interface MonthBucket {
   net: number;
 }
 
+type RangeOption = 3 | 6 | 12;
+const RANGE_OPTIONS: RangeOption[] = [3, 6, 12];
+
 export const MonthlyTrendsChart = memo(
   ({ expenses, incomes, sessions = [] }: MonthlyTrendsChartProps) => {
+    const [range, setRange] = useState<RangeOption>(6);
+
     const data = useMemo<MonthBucket[]>(() => {
       const months: MonthBucket[] = [];
       const now = new Date();
-      for (let i = 5; i >= 0; i--) {
+      for (let i = range - 1; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        const label = d.toLocaleDateString(undefined, { month: "short" });
+        const label =
+          range === 12
+            ? d.toLocaleDateString(undefined, { month: "short", year: "2-digit" })
+            : d.toLocaleDateString(undefined, { month: "short" });
         months.push({ key, label, income: 0, expenses: 0, net: 0 });
       }
       const map = new Map(months.map((m) => [m.key, m]));
