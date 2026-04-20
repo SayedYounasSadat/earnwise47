@@ -43,6 +43,8 @@ import { CategoryPieChart } from "./CategoryPieChart";
 import { BudgetInsights } from "./BudgetInsights";
 import { EditBudgetEntryDialog } from "./EditBudgetEntryDialog";
 import { MonthlyTrendsChart } from "./MonthlyTrendsChart";
+import { UpcomingBillsCard } from "./UpcomingBillsCard";
+import { YearOverYearCard } from "./YearOverYearCard";
 
 interface BudgetTabProps {
   /** Optional work sessions used to auto-sync earnings as income. */
