@@ -43,6 +43,8 @@ import { CategoryPieChart } from "./CategoryPieChart";
 import { BudgetInsights } from "./BudgetInsights";
 import { EditBudgetEntryDialog } from "./EditBudgetEntryDialog";
 import { MonthlyTrendsChart } from "./MonthlyTrendsChart";
+import { UpcomingBillsCard } from "./UpcomingBillsCard";
+import { YearOverYearCard } from "./YearOverYearCard";
 
 interface BudgetTabProps {
   /** Optional work sessions used to auto-sync earnings as income. */
@@ -511,6 +513,12 @@ export const BudgetTab = memo(({ sessions = [] }: BudgetTabProps) => {
 
       {/* 6-month trends */}
       <MonthlyTrendsChart expenses={expenses} incomes={incomes} sessions={sessions} />
+
+      {/* Bills + YoY */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <UpcomingBillsCard expenses={expenses} />
+        <YearOverYearCard expenses={expenses} incomes={incomes} sessions={sessions} />
+      </div>
 
       {/* Export */}
       <div className="flex justify-end">
