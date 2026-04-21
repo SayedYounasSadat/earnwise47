@@ -69,4 +69,17 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "firebase-vendor": ["firebase/app", "firebase/auth", "firebase/firestore"],
+          "charts-vendor": ["recharts"],
+          "pdf-vendor": ["jspdf", "jspdf-autotable"],
+        },
+      },
+    },
+  },
 }));
