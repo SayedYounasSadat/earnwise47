@@ -288,12 +288,16 @@ export const Dashboard = () => {
 
           {/* Budget Tab */}
           <TabsContent value="budget" className="animate-fade-in">
-            <BudgetTab sessions={sessions} />
+            <Suspense fallback={<TabSkeleton />}>
+              <BudgetTab sessions={sessions} />
+            </Suspense>
           </TabsContent>
 
           {/* Study Tab */}
           <TabsContent value="study" className="animate-fade-in">
-            <StudyTab />
+            <Suspense fallback={<TabSkeleton />}>
+              <StudyTab />
+            </Suspense>
           </TabsContent>
 
           {/* Analytics Tab */}
