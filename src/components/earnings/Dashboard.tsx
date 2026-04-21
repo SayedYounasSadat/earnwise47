@@ -1,5 +1,6 @@
 // Main dashboard layout with tabs
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, lazy, Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEarningsTracker } from "@/hooks/useEarningsTracker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,8 +27,8 @@ import { OvertimeCard } from "./OvertimeCard";
 import { MissedTimeCard } from "./MissedTimeCard";
 import { WorldClockWidget } from "./WorldClockWidget";
 import { KeyboardShortcutsHint } from "./KeyboardShortcutsHint";
-import { BudgetTab } from "./BudgetTab";
-import { StudyTab } from "./StudyTab";
+const BudgetTab = lazy(() => import("./BudgetTab").then(m => ({ default: m.BudgetTab })));
+const StudyTab = lazy(() => import("./StudyTab").then(m => ({ default: m.StudyTab })));
 import { FinancialHealthCard } from "./FinancialHealthCard";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { generatePDFReport } from "@/utils/pdfExport";
@@ -287,12 +288,16 @@ export const Dashboard = () => {
 
           {/* Budget Tab */}
           <TabsContent value="budget" className="animate-fade-in">
-            <BudgetTab sessions={sessions} />
+            <Suspense fallback={<TabSkeleton />}>
+              <BudgetTab sessions={sessions} />
+            </Suspense>
           </TabsContent>
 
           {/* Study Tab */}
           <TabsContent value="study" className="animate-fade-in">
-            <StudyTab />
+            <Suspense fallback={<TabSkeleton />}>
+              <StudyTab />
+            </Suspense>
           </TabsContent>
 
           {/* Analytics Tab */}
@@ -408,3 +413,14 @@ export const Dashboard = () => {
     </div>
   );
 };
+
+const TabSkeleton = () => (
+  <div className="space-y-4">
+    <Skeleton className="h-32 w-full rounded-xl" />
+    <div className="grid gap-4 md:grid-cols-2">
+      <Skeleton className="h-40 w-full rounded-xl" />
+      <Skeleton className="h-40 w-full rounded-xl" />
+    </div>
+    <Skeleton className="h-64 w-full rounded-xl" />
+  </div>
+);
