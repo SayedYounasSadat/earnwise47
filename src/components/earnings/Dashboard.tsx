@@ -1,5 +1,6 @@
 // Main dashboard layout with tabs
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, lazy, Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEarningsTracker } from "@/hooks/useEarningsTracker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
