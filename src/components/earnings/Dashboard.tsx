@@ -27,10 +27,11 @@ import { MissedTimeCard } from "./MissedTimeCard";
 import { WorldClockWidget } from "./WorldClockWidget";
 import { KeyboardShortcutsHint } from "./KeyboardShortcutsHint";
 import { BudgetTab } from "./BudgetTab";
+import { StudyTab } from "./StudyTab";
 import { FinancialHealthCard } from "./FinancialHealthCard";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { generatePDFReport } from "@/utils/pdfExport";
-import { Home, BarChart3, History, Settings, Calendar, Clock, DollarSign, Zap, Wallet } from "lucide-react";
+import { Home, BarChart3, History, Settings, Calendar, Clock, DollarSign, Zap, Wallet, BookOpen } from "lucide-react";
 
 export const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -152,7 +153,7 @@ export const Dashboard = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="timer" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-4 sm:mb-6 h-10 sm:h-11">
+          <TabsList className="grid w-full grid-cols-7 mb-4 sm:mb-6 h-10 sm:h-11">
             <TabsTrigger value="timer" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
               <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="hidden md:inline">Timer</span>
@@ -160,6 +161,10 @@ export const Dashboard = () => {
             <TabsTrigger value="budget" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
               <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
               <span className="hidden md:inline">Budget</span>
+            </TabsTrigger>
+            <TabsTrigger value="study" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden md:inline">Study</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
               <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -283,6 +288,11 @@ export const Dashboard = () => {
           {/* Budget Tab */}
           <TabsContent value="budget" className="animate-fade-in">
             <BudgetTab sessions={sessions} />
+          </TabsContent>
+
+          {/* Study Tab */}
+          <TabsContent value="study" className="animate-fade-in">
+            <StudyTab />
           </TabsContent>
 
           {/* Analytics Tab */}
