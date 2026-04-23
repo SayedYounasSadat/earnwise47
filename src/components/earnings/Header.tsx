@@ -1,5 +1,5 @@
 // App header with dark mode toggle and user menu
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { Moon, Sun, Wallet, LogOut, User, Cloud, CloudOff, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -23,6 +23,7 @@ interface HeaderProps {
     photoURL: string | null;
   } | null;
   onLogout?: () => void;
+  sidebarTrigger?: ReactNode;
 }
 
 const SyncIndicator = ({ status }: { status: "idle" | "syncing" | "synced" | "error" }) => {
@@ -49,7 +50,7 @@ const SyncIndicator = ({ status }: { status: "idle" | "syncing" | "synced" | "er
   );
 };
 
-export const Header = memo(({ isDarkMode, onToggleDarkMode, syncStatus, user, onLogout }: HeaderProps) => {
+export const Header = memo(({ isDarkMode, onToggleDarkMode, syncStatus, user, onLogout, sidebarTrigger }: HeaderProps) => {
   const initials = user?.displayName
     ? user.displayName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.[0]?.toUpperCase() || "?";
@@ -59,6 +60,7 @@ export const Header = memo(({ isDarkMode, onToggleDarkMode, syncStatus, user, on
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-3">
+          {sidebarTrigger}
           <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
             <Wallet className="w-6 h-6 text-primary-foreground" />
           </div>

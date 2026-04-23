@@ -427,3 +427,64 @@ const TabSkeleton = () => (
     <Skeleton className="h-64 w-full rounded-xl" />
   </div>
 );
+
+type DashboardSection = "timer" | "budget" | "study" | "analytics" | "logs" | "schedule" | "settings";
+
+const NAV_ITEMS: { value: DashboardSection; label: string; icon: LucideIcon }[] = [
+  { value: "timer", label: "Timer", icon: Home },
+  { value: "budget", label: "Budget", icon: Wallet },
+  { value: "study", label: "Study", icon: BookOpen },
+  { value: "analytics", label: "Analytics", icon: BarChart3 },
+  { value: "logs", label: "Logs", icon: History },
+  { value: "schedule", label: "Schedule", icon: Calendar },
+  { value: "settings", label: "Settings", icon: Settings },
+];
+
+const AppSidebar = ({ activeSection, onSectionChange }: { activeSection: DashboardSection; onSectionChange: (section: DashboardSection) => void }) => {
+  const { state, setOpenMobile } = useSidebar();
+  const collapsed = state === "collapsed";
+
+  return (
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+      <SidebarHeader className="px-3 py-4">
+        <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Wallet className="h-4 w-4" />
+          </div>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-sidebar-foreground">EarnWise</p>
+              <p className="truncate text-xs text-sidebar-foreground/70">Workspace</p>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Main menu</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {NAV_ITEMS.map((item) => (
+                <SidebarMenuItem key={item.value}>
+                  <SidebarMenuButton
+                    tooltip={item.label}
+                    isActive={activeSection === item.value}
+                    onClick={() => {
+                      onSectionChange(item.value);
+                      setOpenMobile(false);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
+  );
+};
