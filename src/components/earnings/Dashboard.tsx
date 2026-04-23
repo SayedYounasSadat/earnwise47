@@ -146,7 +146,7 @@ export const Dashboard = () => {
 
   return (
     <SidebarProvider defaultOpen>
-      <div className="min-h-screen w-full bg-background theme-transition">
+      <div className="flex min-h-screen w-full bg-background theme-transition">
         <AppSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
         <SidebarInset>
       <Header
