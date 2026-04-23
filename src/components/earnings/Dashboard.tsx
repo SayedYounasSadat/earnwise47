@@ -1,9 +1,8 @@
-// Main dashboard layout with tabs
+// Main dashboard layout with sidebar menu
 import { useState, useCallback, useMemo, useEffect, lazy, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEarningsTracker } from "@/hooks/useEarningsTracker";
 import { useAuth } from "@/contexts/AuthContext";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "./Header";
 import { TimerDisplay } from "./TimerDisplay";
 import { EarningsDisplay } from "./EarningsDisplay";
@@ -32,7 +31,23 @@ const StudyTab = lazy(() => import("./StudyTab").then(m => ({ default: m.StudyTa
 import { FinancialHealthCard } from "./FinancialHealthCard";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { generatePDFReport } from "@/utils/pdfExport";
-import { Home, BarChart3, History, Settings, Calendar, Clock, DollarSign, Zap, Wallet, BookOpen } from "lucide-react";
+import { Home, BarChart3, History, Settings, Calendar, Clock, DollarSign, Zap, Wallet, BookOpen, type LucideIcon } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
 export const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -76,6 +91,7 @@ export const Dashboard = () => {
   } = useEarningsTracker(user?.uid);
 
   const [sessionNotes, setSessionNotes] = useState("");
+  const [activeSection, setActiveSection] = useState<DashboardSection>("timer");
 
   const handleStop = useCallback(() => {
     stopWork(sessionNotes);
@@ -129,7 +145,10 @@ export const Dashboard = () => {
   }), [sessions, settings, schedule, todayEarnings, weekEarnings, monthEarnings]);
 
   return (
-    <div className="min-h-screen bg-background theme-transition">
+    <SidebarProvider defaultOpen>
+      <div className="min-h-screen w-full bg-background theme-transition">
+        <AppSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <SidebarInset>
       <Header
         isDarkMode={settings.darkMode}
         onToggleDarkMode={toggleDarkMode}
@@ -140,6 +159,7 @@ export const Dashboard = () => {
           photoURL: user.photoURL,
         } : null}
         onLogout={logout}
+        sidebarTrigger={<SidebarTrigger className="mr-2 h-9 w-9 rounded-full" />}
       />
 
       <main className="container px-3 sm:px-4 py-3 sm:py-4 md:py-6 max-w-5xl mx-auto">
@@ -152,41 +172,10 @@ export const Dashboard = () => {
           />
         </section>
 
-        {/* Main Tabs */}
-        <Tabs defaultValue="timer" className="w-full">
-          <TabsList className="grid w-full grid-cols-7 mb-4 sm:mb-6 h-10 sm:h-11">
-            <TabsTrigger value="timer" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
-              <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden md:inline">Timer</span>
-            </TabsTrigger>
-            <TabsTrigger value="budget" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
-              <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden md:inline">Budget</span>
-            </TabsTrigger>
-            <TabsTrigger value="study" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
-              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden md:inline">Study</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
-              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden md:inline">Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
-              <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden md:inline">Logs</span>
-            </TabsTrigger>
-            <TabsTrigger value="schedule" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
-              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden md:inline">Schedule</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-1 sm:px-3">
-              <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span className="hidden md:inline">Settings</span>
-            </TabsTrigger>
-          </TabsList>
-
+        {/* Main menu content */}
           {/* Timer Tab */}
-          <TabsContent value="timer" className="space-y-4 sm:space-y-6 animate-fade-in">
+          {activeSection === "timer" && (
+          <section className="space-y-4 sm:space-y-6 animate-fade-in">
             {/* Today's Quick Stats Bar */}
             <div className="flex items-center gap-2 sm:gap-4 p-2.5 sm:p-3 rounded-xl bg-muted/50 text-sm overflow-x-auto">
               <div className="flex items-center gap-1.5 shrink-0">
@@ -284,24 +273,30 @@ export const Dashboard = () => {
               onSaveNotes={(notes) => setSessionNotes(notes)}
               isWorking={isWorking}
             />
-          </TabsContent>
+          </section>
+          )}
 
-          {/* Budget Tab */}
-          <TabsContent value="budget" className="animate-fade-in">
+          {/* Budget */}
+          {activeSection === "budget" && (
+          <section className="animate-fade-in">
             <Suspense fallback={<TabSkeleton />}>
               <BudgetTab sessions={sessions} />
             </Suspense>
-          </TabsContent>
+          </section>
+          )}
 
-          {/* Study Tab */}
-          <TabsContent value="study" className="animate-fade-in">
+          {/* Study */}
+          {activeSection === "study" && (
+          <section className="animate-fade-in">
             <Suspense fallback={<TabSkeleton />}>
               <StudyTab />
             </Suspense>
-          </TabsContent>
+          </section>
+          )}
 
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-4 sm:space-y-6 animate-fade-in">
+          {/* Analytics */}
+          {activeSection === "analytics" && (
+          <section className="space-y-4 sm:space-y-6 animate-fade-in">
             <EarningsChart sessions={sessions} />
 
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
@@ -361,10 +356,12 @@ export const Dashboard = () => {
                 </div>
               </div>
             </div>
-          </TabsContent>
+          </section>
+          )}
 
-          {/* Logs Tab */}
-          <TabsContent value="logs" className="space-y-4 sm:space-y-6 animate-fade-in">
+          {/* Logs */}
+          {activeSection === "logs" && (
+          <section className="space-y-4 sm:space-y-6 animate-fade-in">
             <SessionLogsCard
               sessions={sessions}
               onClearLogs={clearLogs}
@@ -379,15 +376,19 @@ export const Dashboard = () => {
               onExportPDF={pdfExportHandler}
               onImportJSON={importJSON}
             />
-          </TabsContent>
+          </section>
+          )}
 
-          {/* Schedule Tab */}
-          <TabsContent value="schedule" className="animate-fade-in">
+          {/* Schedule */}
+          {activeSection === "schedule" && (
+          <section className="animate-fade-in">
             <ScheduleCard schedule={schedule} onUpdate={updateSchedule} />
-          </TabsContent>
+          </section>
+          )}
 
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-4 sm:space-y-6 animate-fade-in">
+          {/* Settings */}
+          {activeSection === "settings" && (
+          <section className="space-y-4 sm:space-y-6 animate-fade-in">
             <SettingsCard settings={settings} onUpdate={updateSettings} />
             <ExportImportCard
               onExportJSON={exportJSON}
@@ -396,8 +397,8 @@ export const Dashboard = () => {
               onImportJSON={importJSON}
             />
             <ResetDataCard onResetAll={resetAllData} onClearLogs={clearLogs} />
-          </TabsContent>
-        </Tabs>
+          </section>
+          )}
 
         {/* Footer */}
         <footer className="mt-8 pt-6 border-t border-border text-center text-xs sm:text-sm text-muted-foreground">
@@ -410,7 +411,9 @@ export const Dashboard = () => {
           </p>
         </footer>
       </main>
-    </div>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 
@@ -424,3 +427,64 @@ const TabSkeleton = () => (
     <Skeleton className="h-64 w-full rounded-xl" />
   </div>
 );
+
+type DashboardSection = "timer" | "budget" | "study" | "analytics" | "logs" | "schedule" | "settings";
+
+const NAV_ITEMS: { value: DashboardSection; label: string; icon: LucideIcon }[] = [
+  { value: "timer", label: "Timer", icon: Home },
+  { value: "budget", label: "Budget", icon: Wallet },
+  { value: "study", label: "Study", icon: BookOpen },
+  { value: "analytics", label: "Analytics", icon: BarChart3 },
+  { value: "logs", label: "Logs", icon: History },
+  { value: "schedule", label: "Schedule", icon: Calendar },
+  { value: "settings", label: "Settings", icon: Settings },
+];
+
+const AppSidebar = ({ activeSection, onSectionChange }: { activeSection: DashboardSection; onSectionChange: (section: DashboardSection) => void }) => {
+  const { state, setOpenMobile } = useSidebar();
+  const collapsed = state === "collapsed";
+
+  return (
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+      <SidebarHeader className="px-3 py-4">
+        <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Wallet className="h-4 w-4" />
+          </div>
+          {!collapsed && (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-sidebar-foreground">EarnWise</p>
+              <p className="truncate text-xs text-sidebar-foreground/70">Workspace</p>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Main menu</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {NAV_ITEMS.map((item) => (
+                <SidebarMenuItem key={item.value}>
+                  <SidebarMenuButton
+                    tooltip={item.label}
+                    isActive={activeSection === item.value}
+                    onClick={() => {
+                      onSectionChange(item.value);
+                      setOpenMobile(false);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
+  );
+};
