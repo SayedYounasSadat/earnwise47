@@ -1,6 +1,6 @@
 // Kauri-inspired Study tab — clean, minimal, focused.
 import { useState, useMemo } from "react";
-import { BookOpen, Download, Plus } from "lucide-react";
+import { BookOpen, CalendarDays, Download, Plus } from "lucide-react";
 import { useStudy } from "@/hooks/useStudy";
 import { SubjectManager } from "./study/SubjectManager";
 import { StudyTimer } from "./study/StudyTimer";
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { toast } from "sonner";
 
 export const StudyTab = () => {
-  const { subjects, sessions, addSubject, deleteSubject, addSession, deleteSession } = useStudy();
+  const { subjects, sessions, studyDays, addSubject, deleteSubject, addSession, deleteSession, updateStudyDays } = useStudy();
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
   const [manualDate, setManualDate] = useState(() => new Date().toISOString().split("T")[0]);
@@ -100,6 +100,7 @@ export const StudyTab = () => {
           Track study time per subject. Stopwatch or Pomodoro — your choice.
         </p>
         <div className="flex flex-wrap justify-center gap-2 pt-3">
+          <StudyDayPicker studyDays={studyDays} onChange={updateStudyDays} />
           <Dialog open={manualOpen} onOpenChange={setManualOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="rounded-full gap-1.5">
@@ -167,7 +168,7 @@ export const StudyTab = () => {
       />
 
       {/* Stats */}
-      <StudyStats subjects={subjects} sessions={sessions} />
+      <StudyStats subjects={subjects} sessions={sessions} studyDays={studyDays} />
 
       {/* Session log */}
       <div className="space-y-3">
@@ -177,5 +178,55 @@ export const StudyTab = () => {
         <StudySessionLog subjects={subjects} sessions={sessions} onDelete={deleteSession} />
       </div>
     </div>
+  );
+};
+
+const WEEKDAYS = [
+  { value: 0, label: "Sun" },
+  { value: 1, label: "Mon" },
+  { value: 2, label: "Tue" },
+  { value: 3, label: "Wed" },
+  { value: 4, label: "Thu" },
+  { value: 5, label: "Fri" },
+  { value: 6, label: "Sat" },
+];
+
+const StudyDayPicker = ({ studyDays, onChange }: { studyDays: number[]; onChange: (days: number[]) => void }) => {
+  const toggleDay = (day: number) => {
+    const next = studyDays.includes(day)
+      ? studyDays.filter((item) => item !== day)
+      : [...studyDays, day];
+    onChange(next.length > 0 ? next : studyDays);
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="rounded-full gap-1.5">
+          <CalendarDays className="w-3.5 h-3.5" /> Study days
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Study schedule</DialogTitle></DialogHeader>
+        <div className="space-y-3 py-2">
+          <p className="text-sm text-muted-foreground">Choose the days that count toward your streak. Off-days are skipped automatically.</p>
+          <div className="grid grid-cols-7 gap-2">
+            {WEEKDAYS.map((day) => {
+              const selected = studyDays.includes(day.value);
+              return (
+                <button
+                  key={day.value}
+                  type="button"
+                  onClick={() => toggleDay(day.value)}
+                  className={`h-12 rounded-lg border text-xs font-medium transition-colors ${selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:bg-muted"}`}
+                >
+                  {day.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
