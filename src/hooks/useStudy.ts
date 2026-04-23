@@ -95,14 +95,25 @@ export const useStudy = () => {
     toast.success("Session deleted");
   }, []);
 
+  const updateStudyDays = useCallback((studyDays: number[]) => {
+    setState((prev) => {
+      const next = { ...prev, studyDays: [...studyDays].sort((a, b) => a - b) };
+      save(next);
+      return next;
+    });
+    toast.success("Study schedule updated");
+  }, []);
+
   return {
     subjects: state.subjects,
     sessions: state.sessions,
+    studyDays: state.studyDays,
     addSubject,
     updateSubject,
     deleteSubject,
     addSession,
     deleteSession,
+    updateStudyDays,
     persist,
   };
 };

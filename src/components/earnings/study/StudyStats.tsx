@@ -9,11 +9,12 @@ import {
 interface Props {
   subjects: Subject[];
   sessions: StudySession[];
+  studyDays: number[];
 }
 
 const dateKey = (d: Date) => d.toISOString().split("T")[0];
 
-export const StudyStats = ({ subjects, sessions }: Props) => {
+export const StudyStats = ({ subjects, sessions, studyDays }: Props) => {
   const stats = useMemo(() => {
     const today = dateKey(new Date());
     const now = new Date();
@@ -31,14 +32,21 @@ export const StudyStats = ({ subjects, sessions }: Props) => {
 
     const totalSec = sessions.reduce((sum, s) => sum + s.duration, 0);
 
-    // Streak: consecutive days with at least 1 session ending today (or yesterday if none today)
+    const isStudyDay = (date: Date) => studyDays.includes(date.getDay());
+
+    // Streak: consecutive scheduled study days; configured off-days are skipped.
     const dayHas = new Set(sessions.filter((s) => s.duration >= 60).map((s) => s.date));
     let streak = 0;
     const cur = new Date();
-    if (!dayHas.has(dateKey(cur))) cur.setDate(cur.getDate() - 1);
+    while (!isStudyDay(cur)) cur.setDate(cur.getDate() - 1);
+    if (!dayHas.has(dateKey(cur))) {
+      cur.setDate(cur.getDate() - 1);
+      while (!isStudyDay(cur)) cur.setDate(cur.getDate() - 1);
+    }
     while (dayHas.has(dateKey(cur))) {
       streak++;
       cur.setDate(cur.getDate() - 1);
+      while (!isStudyDay(cur)) cur.setDate(cur.getDate() - 1);
     }
 
     // 7-day bars
@@ -57,11 +65,13 @@ export const StudyStats = ({ subjects, sessions }: Props) => {
 
     const activeDays = statsDateRange(28).map((date) => {
       const seconds = sessions.filter((s) => s.date === date).reduce((sum, s) => sum + s.duration, 0);
-      return { date, minutes: Math.round(seconds / 60) };
+      const day = new Date(`${date}T12:00:00`);
+      return { date, minutes: Math.round(seconds / 60), isStudyDay: isStudyDay(day) };
     });
 
-    const studiedDays = activeDays.filter((day) => day.minutes > 0).length;
-    const consistency = Math.round((studiedDays / activeDays.length) * 100);
+    const scheduledDays = activeDays.filter((day) => day.isStudyDay);
+    const studiedDays = scheduledDays.filter((day) => day.minutes > 0).length;
+    const consistency = Math.round((studiedDays / Math.max(scheduledDays.length, 1)) * 100);
     const averagePerSession = sessions.length > 0 ? totalSec / sessions.length : 0;
     const bestDay = days.reduce((best, day) => day.minutes > best.minutes ? day : best, days[0]);
 
@@ -78,8 +88,8 @@ export const StudyStats = ({ subjects, sessions }: Props) => {
     const totalGoalHours = subjects.reduce((sum, subject) => sum + (subject.goalHoursPerWeek ?? 0), 0);
     const goalCompletion = totalGoalHours > 0 ? Math.min(100, (weekSec / 3600 / totalGoalHours) * 100) : 0;
 
-    return { todaySec, weekSec, totalSec, streak, days, bySubject, activeDays, consistency, averagePerSession, bestDay, topSubject, goalCompletion, totalGoalHours };
-  }, [subjects, sessions]);
+    return { todaySec, weekSec, totalSec, streak, days, bySubject, activeDays, scheduledDays, consistency, averagePerSession, bestDay, topSubject, goalCompletion, totalGoalHours };
+  }, [subjects, sessions, studyDays]);
 
   const fmtH = (sec: number) => {
     const h = Math.floor(sec / 3600);
@@ -101,7 +111,7 @@ export const StudyStats = ({ subjects, sessions }: Props) => {
 
       <div className="grid gap-3 md:grid-cols-3">
         <InsightTile icon={<Award className="w-4 h-4" />} label="Weekly goal" value={stats.totalGoalHours > 0 ? `${Math.round(stats.goalCompletion)}%` : "No goal"} detail={stats.totalGoalHours > 0 ? `${fmtH(stats.weekSec)} / ${stats.totalGoalHours}h` : "Set subject goals to track progress"} />
-        <InsightTile icon={<CalendarDays className="w-4 h-4" />} label="Consistency" value={`${stats.consistency}%`} detail={`${stats.activeDays.filter((d) => d.minutes > 0).length} of 28 days studied`} />
+        <InsightTile icon={<CalendarDays className="w-4 h-4" />} label="Consistency" value={`${stats.consistency}%`} detail={`${stats.scheduledDays.filter((d) => d.minutes > 0).length} of ${stats.scheduledDays.length} study days`} />
         <InsightTile icon={<Clock className="w-4 h-4" />} label="Avg. session" value={fmtH(stats.averagePerSession)} detail={stats.topSubject ? `Top: ${stats.topSubject.subject.name}` : "No sessions yet"} />
       </div>
 
@@ -155,11 +165,11 @@ export const StudyStats = ({ subjects, sessions }: Props) => {
           <h4 className="text-sm font-medium text-foreground mb-4">28-day activity</h4>
           <div className="grid grid-cols-7 gap-1.5">
             {stats.activeDays.map((day) => {
-              const opacity = day.minutes === 0 ? 0.18 : Math.min(1, 0.28 + day.minutes / 150);
-              return <div key={day.date} title={`${day.date}: ${day.minutes} min`} className="aspect-square rounded-sm bg-primary" style={{ opacity }} />;
+              const opacity = !day.isStudyDay ? 0.08 : day.minutes === 0 ? 0.18 : Math.min(1, 0.28 + day.minutes / 150);
+              return <div key={day.date} title={`${day.date}: ${day.isStudyDay ? `${day.minutes} min` : "off day"}`} className="aspect-square rounded-sm bg-primary" style={{ opacity }} />;
             })}
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">Best recent day: {stats.bestDay?.label ?? "—"} · {stats.bestDay?.minutes ?? 0} min</p>
+          <p className="mt-3 text-xs text-muted-foreground">Dim squares are off-days. Best recent day: {stats.bestDay?.label ?? "—"} · {stats.bestDay?.minutes ?? 0} min</p>
         </div>
       </div>
 
