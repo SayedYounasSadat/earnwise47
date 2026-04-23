@@ -145,10 +145,9 @@ export const Dashboard = () => {
   }), [sessions, settings, schedule, todayEarnings, weekEarnings, monthEarnings]);
 
   return (
-    <SidebarProvider defaultOpen>
-      <div className="flex min-h-screen w-full bg-background theme-transition">
+    <SidebarProvider defaultOpen className="bg-background theme-transition">
         <AppSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-        <SidebarInset>
+        <SidebarInset className="min-w-0">
       <Header
         isDarkMode={settings.darkMode}
         onToggleDarkMode={toggleDarkMode}
@@ -412,7 +411,6 @@ export const Dashboard = () => {
         </footer>
       </main>
         </SidebarInset>
-      </div>
     </SidebarProvider>
   );
 };
