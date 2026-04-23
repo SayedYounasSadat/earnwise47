@@ -37,9 +37,11 @@ export interface StudySession {
 export interface StudyState {
   subjects: Subject[];
   sessions: StudySession[];
+  studyDays: number[]; // 0 Sunday - 6 Saturday
 }
 
 export const DEFAULT_STUDY_STATE: StudyState = {
   subjects: [],
   sessions: [],
+  studyDays: [1, 2, 3, 4, 5],
 };
