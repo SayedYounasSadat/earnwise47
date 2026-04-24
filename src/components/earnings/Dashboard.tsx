@@ -459,6 +459,81 @@ export const Dashboard = () => {
           </p>
         </footer>
       </main>
+
+      {/* Mobile bottom navigation */}
+      <nav
+        aria-label="Primary"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+      >
+        <ul className="grid grid-cols-5 gap-0.5 px-1 pt-1">
+          {NAV_ITEMS.slice(0, 5).map((item) => {
+            const active = activeSection === item.value;
+            const Icon = item.icon;
+            return (
+              <li key={item.value}>
+                <button
+                  onClick={() => setActiveSection(item.value)}
+                  className={`w-full flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-md text-[10px] font-medium transition-colors ${
+                    active ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                  aria-current={active ? "page" : undefined}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Command palette */}
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+        <CommandInput placeholder="Jump to a section…" />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Navigation">
+            {NAV_ITEMS.map((item) => (
+              <CommandItem
+                key={item.value}
+                onSelect={() => {
+                  setActiveSection(item.value);
+                  setCommandOpen(false);
+                }}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                <span>{item.label}</span>
+                <span className="ml-auto text-xs text-muted-foreground">{item.description}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Actions">
+            <CommandItem onSelect={() => { toggleDarkMode(); setCommandOpen(false); }}>
+              Toggle dark mode
+            </CommandItem>
+            {!isWorking && (
+              <CommandItem onSelect={() => { startWork(); setCommandOpen(false); setActiveSection("timer"); }}>
+                Start working
+              </CommandItem>
+            )}
+            {isWorking && !isPaused && (
+              <CommandItem onSelect={() => { pauseWork(); setCommandOpen(false); }}>
+                Pause timer
+              </CommandItem>
+            )}
+            {isWorking && isPaused && (
+              <CommandItem onSelect={() => { resumeWork(); setCommandOpen(false); }}>
+                Resume timer
+              </CommandItem>
+            )}
+            {isWorking && (
+              <CommandItem onSelect={() => { handleStop(); setCommandOpen(false); }}>
+                Stop & save session
+              </CommandItem>
+            )}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
         </SidebarInset>
     </SidebarProvider>
   );
