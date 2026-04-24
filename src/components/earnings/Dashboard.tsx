@@ -48,6 +48,26 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+
+type DashboardSection = "timer" | "budget" | "study" | "analytics" | "logs" | "schedule" | "settings";
+
+const NAV_ITEMS: { value: DashboardSection; label: string; icon: LucideIcon; description: string }[] = [
+  { value: "timer", label: "Timer", icon: Home, description: "Track time and earnings" },
+  { value: "budget", label: "Budget", icon: Wallet, description: "Plan spending and bills" },
+  { value: "study", label: "Study", icon: BookOpen, description: "Study sessions and stats" },
+  { value: "analytics", label: "Analytics", icon: BarChart3, description: "Trends and insights" },
+  { value: "logs", label: "Logs", icon: History, description: "Session history" },
+  { value: "schedule", label: "Schedule", icon: Calendar, description: "Weekly availability" },
+  { value: "settings", label: "Settings", icon: Settings, description: "Preferences and data" },
+];
 
 export const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -92,6 +112,21 @@ export const Dashboard = () => {
 
   const [sessionNotes, setSessionNotes] = useState("");
   const [activeSection, setActiveSection] = useState<DashboardSection>("timer");
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  // ⌘K / Ctrl+K to open command palette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const currentNav = NAV_ITEMS.find((n) => n.value === activeSection);
 
   const handleStop = useCallback(() => {
     stopWork(sessionNotes);
@@ -158,51 +193,84 @@ export const Dashboard = () => {
           photoURL: user.photoURL,
         } : null}
         onLogout={logout}
-        sidebarTrigger={<SidebarTrigger className="mr-2 h-9 w-9 rounded-full" />}
+        sidebarTrigger={<SidebarTrigger className="mr-1 h-8 w-8 rounded-md" />}
+        currentSection={currentNav?.label}
+        onOpenCommand={() => setCommandOpen(true)}
       />
 
-      <main className="container px-3 sm:px-4 py-3 sm:py-4 md:py-6 max-w-5xl mx-auto">
-        {/* Hero Progress Bar */}
-        <section className="mb-4 sm:mb-6 animate-fade-in">
-          <ProgressCard 
-            currentEarnings={todayEarnings} 
-            dailyGoal={todayGoal}
-            isWorking={isWorking && !isPaused && !isOnBreak}
-          />
-        </section>
+      <main className="container px-3 sm:px-4 py-4 sm:py-5 md:py-6 max-w-5xl mx-auto pb-24 md:pb-6">
+        {/* Section header */}
+        {currentNav && (
+          <div className="mb-4 sm:mb-5 animate-fade-in">
+            <h2 className="section-title flex items-center gap-2">
+              <currentNav.icon className="w-5 h-5 text-muted-foreground" />
+              {currentNav.label}
+            </h2>
+            <p className="section-subtitle">{currentNav.description}</p>
+          </div>
+        )}
 
+        {/* Hero Progress Bar — only on timer view */}
+        {activeSection === "timer" && (
+          <section className="mb-4 sm:mb-6 animate-fade-in">
+            <ProgressCard
+              currentEarnings={todayEarnings}
+              dailyGoal={todayGoal}
+              isWorking={isWorking && !isPaused && !isOnBreak}
+            />
+          </section>
+        )}
         {/* Main menu content */}
           {/* Timer Tab */}
           {activeSection === "timer" && (
           <section className="space-y-4 sm:space-y-6 animate-fade-in">
-            {/* Today's Quick Stats Bar */}
-            <div className="flex items-center gap-2 sm:gap-4 p-2.5 sm:p-3 rounded-xl bg-muted/50 text-sm overflow-x-auto">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <DollarSign className="w-3.5 h-3.5 text-accent" />
-                <span className="text-muted-foreground text-xs">Today</span>
-                <span className="font-bold text-foreground tabular-nums">${todayEarnings.toFixed(2)}</span>
+            {/* Status pill + Today's Quick Stats */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
+                isWorking && !isPaused && !isOnBreak
+                  ? "bg-success/10 text-success border-success/30"
+                  : isOnBreak
+                    ? "bg-warning/10 text-warning border-warning/30"
+                    : isPaused
+                      ? "bg-muted text-muted-foreground border-border"
+                      : "bg-muted/60 text-muted-foreground border-border"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  isWorking && !isPaused && !isOnBreak ? "bg-success animate-pulse" :
+                  isOnBreak ? "bg-warning" :
+                  isPaused ? "bg-muted-foreground" : "bg-muted-foreground/60"
+                }`} />
+                {isOnBreak ? "On break" : isPaused ? "Paused" : isWorking ? "Working" : "Idle"}
               </div>
-              <div className="w-px h-4 bg-border shrink-0" />
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Clock className="w-3.5 h-3.5 text-primary" />
-                <span className="font-medium text-foreground tabular-nums">{todayStats.hours.toFixed(1)}h</span>
+
+              <div className="flex items-center gap-3 sm:gap-4 px-3 py-1.5 rounded-full border border-border/70 bg-card text-xs sm:text-sm overflow-x-auto">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <DollarSign className="w-3.5 h-3.5 text-accent" />
+                  <span className="text-muted-foreground">Today</span>
+                  <span className="font-semibold text-foreground tabular-nums">${todayEarnings.toFixed(2)}</span>
+                </div>
+                <div className="w-px h-3.5 bg-border shrink-0" />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Clock className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-medium text-foreground tabular-nums">{todayStats.hours.toFixed(1)}h</span>
+                </div>
+                <div className="w-px h-3.5 bg-border shrink-0" />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Zap className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-medium text-foreground tabular-nums">{todayStats.sessions}</span>
+                  <span className="text-muted-foreground">sessions</span>
+                </div>
+                {shiftRemaining && settings.showShiftRemaining !== false && (
+                  <>
+                    <div className="w-px h-3.5 bg-border shrink-0" />
+                    <span className="text-muted-foreground shrink-0">⏰ {shiftRemaining}</span>
+                  </>
+                )}
               </div>
-              <div className="w-px h-4 bg-border shrink-0" />
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Zap className="w-3.5 h-3.5 text-primary" />
-                <span className="font-medium text-foreground tabular-nums">{todayStats.sessions}</span>
-                <span className="text-muted-foreground text-xs">sessions</span>
-              </div>
-              {shiftRemaining && settings.showShiftRemaining !== false && (
-                <>
-                  <div className="w-px h-4 bg-border shrink-0" />
-                  <span className="text-xs text-muted-foreground shrink-0">⏰ {shiftRemaining}</span>
-                </>
-              )}
             </div>
 
             {/* Timer and Earnings Hero */}
-            <section className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
+            <section className="surface-card p-4 sm:p-6 md:p-8 shadow-sm">
               <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
                 <div className="flex flex-col items-center justify-center">
                   <TimerDisplay 
@@ -324,35 +392,24 @@ export const Dashboard = () => {
                 exchangeRate={settings.exchangeRate}
                 currencyCode={settings.currencyCode}
               />
-              <div className="glass-card rounded-xl p-4 sm:p-6">
-                <h3 className="font-semibold text-foreground mb-4">Performance Insights</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm text-muted-foreground">Total Sessions</span>
-                    <span className="font-bold text-foreground tabular-nums">{sessions.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm text-muted-foreground">Total Hours</span>
-                    <span className="font-bold text-foreground tabular-nums">
-                      {(sessions.reduce((sum, s) => sum + s.duration, 0) / 3600).toFixed(1)}h
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm text-muted-foreground">Lifetime Earnings</span>
-                    <span className="font-bold text-accent tabular-nums">
-                      ${sessions.reduce((sum, s) => sum + s.earnings, 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm text-muted-foreground">Avg. Session</span>
-                    <span className="font-bold text-foreground tabular-nums">
-                      {sessions.length > 0 
-                        ? `${Math.round(sessions.reduce((sum, s) => sum + s.duration, 0) / sessions.length / 60)}m`
-                        : "0m"
-                      }
-                    </span>
-                  </div>
+              <div className="surface-card p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-foreground">Performance Insights</h3>
+                  <span className="text-xs text-muted-foreground">All-time</span>
                 </div>
+                <dl className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: "Total sessions", value: sessions.length.toString() },
+                    { label: "Total hours", value: `${(sessions.reduce((sum, s) => sum + s.duration, 0) / 3600).toFixed(1)}h` },
+                    { label: "Lifetime earnings", value: `$${sessions.reduce((sum, s) => sum + s.earnings, 0).toFixed(2)}`, accent: true },
+                    { label: "Avg. session", value: sessions.length > 0 ? `${Math.round(sessions.reduce((sum, s) => sum + s.duration, 0) / sessions.length / 60)}m` : "0m" },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-lg border border-border/60 bg-muted/30 p-3">
+                      <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</dt>
+                      <dd className={`mt-1 text-lg font-semibold tabular-nums ${s.accent ? "text-accent" : "text-foreground"}`}>{s.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
             </div>
           </section>
@@ -410,6 +467,81 @@ export const Dashboard = () => {
           </p>
         </footer>
       </main>
+
+      {/* Mobile bottom navigation */}
+      <nav
+        aria-label="Primary"
+        className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]"
+      >
+        <ul className="grid grid-cols-5 gap-0.5 px-1 pt-1">
+          {NAV_ITEMS.slice(0, 5).map((item) => {
+            const active = activeSection === item.value;
+            const Icon = item.icon;
+            return (
+              <li key={item.value}>
+                <button
+                  onClick={() => setActiveSection(item.value)}
+                  className={`w-full flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-md text-[10px] font-medium transition-colors ${
+                    active ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  }`}
+                  aria-current={active ? "page" : undefined}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Command palette */}
+      <CommandDialog open={commandOpen} onOpenChange={setCommandOpen}>
+        <CommandInput placeholder="Jump to a section…" />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup heading="Navigation">
+            {NAV_ITEMS.map((item) => (
+              <CommandItem
+                key={item.value}
+                onSelect={() => {
+                  setActiveSection(item.value);
+                  setCommandOpen(false);
+                }}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                <span>{item.label}</span>
+                <span className="ml-auto text-xs text-muted-foreground">{item.description}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Actions">
+            <CommandItem onSelect={() => { toggleDarkMode(); setCommandOpen(false); }}>
+              Toggle dark mode
+            </CommandItem>
+            {!isWorking && (
+              <CommandItem onSelect={() => { startWork(); setCommandOpen(false); setActiveSection("timer"); }}>
+                Start working
+              </CommandItem>
+            )}
+            {isWorking && !isPaused && (
+              <CommandItem onSelect={() => { pauseWork(); setCommandOpen(false); }}>
+                Pause timer
+              </CommandItem>
+            )}
+            {isWorking && isPaused && (
+              <CommandItem onSelect={() => { resumeWork(); setCommandOpen(false); }}>
+                Resume timer
+              </CommandItem>
+            )}
+            {isWorking && (
+              <CommandItem onSelect={() => { handleStop(); setCommandOpen(false); }}>
+                Stop & save session
+              </CommandItem>
+            )}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
         </SidebarInset>
     </SidebarProvider>
   );
@@ -426,17 +558,6 @@ const TabSkeleton = () => (
   </div>
 );
 
-type DashboardSection = "timer" | "budget" | "study" | "analytics" | "logs" | "schedule" | "settings";
-
-const NAV_ITEMS: { value: DashboardSection; label: string; icon: LucideIcon }[] = [
-  { value: "timer", label: "Timer", icon: Home },
-  { value: "budget", label: "Budget", icon: Wallet },
-  { value: "study", label: "Study", icon: BookOpen },
-  { value: "analytics", label: "Analytics", icon: BarChart3 },
-  { value: "logs", label: "Logs", icon: History },
-  { value: "schedule", label: "Schedule", icon: Calendar },
-  { value: "settings", label: "Settings", icon: Settings },
-];
 
 const AppSidebar = ({ activeSection, onSectionChange }: { activeSection: DashboardSection; onSectionChange: (section: DashboardSection) => void }) => {
   const { state, setOpenMobile } = useSidebar();

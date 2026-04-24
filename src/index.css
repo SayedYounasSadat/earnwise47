@@ -6,59 +6,59 @@
 
 @layer base {
   :root {
-    /* Core backgrounds */
-    --background: 210 20% 98%;
-    --foreground: 220 25% 10%;
+    /* Core backgrounds — refined neutral */
+    --background: 210 20% 99%;
+    --foreground: 220 25% 12%;
 
     /* Cards with subtle elevation */
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card-foreground: 220 25% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover-foreground: 220 25% 12%;
 
-    /* Primary - Deep Teal */
-    --primary: 175 60% 35%;
+    /* Primary - Deep Teal (slightly desaturated for calm) */
+    --primary: 175 50% 32%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Soft Teal */
-    --secondary: 175 30% 92%;
-    --secondary-foreground: 175 60% 25%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 220 25% 18%;
 
     /* Muted backgrounds */
     --muted: 210 20% 96%;
     --muted-foreground: 220 10% 45%;
 
     /* Accent - Warm Gold for money/earnings */
-    --accent: 42 95% 55%;
-    --accent-foreground: 42 100% 15%;
+    --accent: 42 90% 52%;
+    --accent-foreground: 42 100% 14%;
 
     /* Status colors */
-    --destructive: 0 75% 55%;
+    --destructive: 0 72% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 145 65% 42%;
+    --success: 145 55% 40%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 95% 55%;
-    --warning-foreground: 38 100% 15%;
+    --warning: 38 92% 52%;
+    --warning-foreground: 38 100% 14%;
 
     /* Borders & Inputs */
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
-    --ring: 175 60% 35%;
+    --border: 220 15% 92%;
+    --input: 220 15% 92%;
+    --ring: 175 50% 40%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar — matches app palette */
+    --sidebar-background: 210 20% 99%;
+    --sidebar-foreground: 220 15% 30%;
+    --sidebar-primary: 175 50% 32%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 95%;
+    --sidebar-accent-foreground: 220 25% 12%;
+    --sidebar-border: 220 15% 92%;
+    --sidebar-ring: 175 50% 40%;
 
     /* Custom properties for earnings */
     --earnings-glow: 42 100% 60%;
@@ -106,14 +106,14 @@
     --input: 220 20% 20%;
     --ring: 175 55% 50%;
 
-    --sidebar-background: 220 25% 10%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 175 55% 50%;
+    --sidebar-background: 220 25% 9%;
+    --sidebar-foreground: 210 15% 75%;
+    --sidebar-primary: 175 55% 55%;
     --sidebar-primary-foreground: 220 25% 8%;
-    --sidebar-accent: 220 20% 16%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 220 20% 18%;
-    --sidebar-ring: 175 55% 50%;
+    --sidebar-accent: 220 20% 14%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 220 20% 16%;
+    --sidebar-ring: 175 55% 55%;
 
     --earnings-glow: 42 100% 55%;
     --timer-active: 145 60% 50%;
@@ -161,9 +161,22 @@
     text-shadow: 0 0 40px hsl(var(--earnings-glow) / 0.3);
   }
 
-  /* Glass card effect */
+  /* Glass card effect — refined, less heavy shadow for minimal feel */
   .glass-card {
-    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-lg;
+    @apply bg-card/90 backdrop-blur-sm border border-border/60 shadow-sm;
+  }
+
+  /* Surface card — flat alternative to glass-card */
+  .surface-card {
+    @apply bg-card border border-border/60 rounded-xl;
+  }
+
+  /* Section title — used at top of each route */
+  .section-title {
+    @apply text-lg sm:text-xl font-semibold tracking-tight text-foreground;
+  }
+  .section-subtitle {
+    @apply text-sm text-muted-foreground mt-0.5;
   }
 
   /* Status indicator */
@@ -181,13 +194,13 @@
     box-shadow: 0 0 10px hsl(var(--accent) / 0.5);
   }
 
-  /* Card hover effect */
+  /* Card hover effect — gentler */
   .card-hover {
-    @apply transition-all duration-300 ease-out;
+    @apply transition-all duration-200 ease-out;
   }
 
   .card-hover:hover {
-    @apply -translate-y-1 shadow-xl;
+    @apply -translate-y-0.5 shadow-md border-border;
   }
 
   /* Timer display */
