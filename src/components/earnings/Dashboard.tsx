@@ -57,6 +57,18 @@ import {
   CommandList,
 } from "@/components/ui/command";
 
+type DashboardSection = "timer" | "budget" | "study" | "analytics" | "logs" | "schedule" | "settings";
+
+const NAV_ITEMS: { value: DashboardSection; label: string; icon: LucideIcon; description: string }[] = [
+  { value: "timer", label: "Timer", icon: Home, description: "Track time and earnings" },
+  { value: "budget", label: "Budget", icon: Wallet, description: "Plan spending and bills" },
+  { value: "study", label: "Study", icon: BookOpen, description: "Study sessions and stats" },
+  { value: "analytics", label: "Analytics", icon: BarChart3, description: "Trends and insights" },
+  { value: "logs", label: "Logs", icon: History, description: "Session history" },
+  { value: "schedule", label: "Schedule", icon: Calendar, description: "Weekly availability" },
+  { value: "settings", label: "Settings", icon: Settings, description: "Preferences and data" },
+];
+
 export const Dashboard = () => {
   const { user, logout } = useAuth();
 
@@ -449,17 +461,6 @@ const TabSkeleton = () => (
   </div>
 );
 
-type DashboardSection = "timer" | "budget" | "study" | "analytics" | "logs" | "schedule" | "settings";
-
-const NAV_ITEMS: { value: DashboardSection; label: string; icon: LucideIcon }[] = [
-  { value: "timer", label: "Timer", icon: Home },
-  { value: "budget", label: "Budget", icon: Wallet },
-  { value: "study", label: "Study", icon: BookOpen },
-  { value: "analytics", label: "Analytics", icon: BarChart3 },
-  { value: "logs", label: "Logs", icon: History },
-  { value: "schedule", label: "Schedule", icon: Calendar },
-  { value: "settings", label: "Settings", icon: Settings },
-];
 
 const AppSidebar = ({ activeSection, onSectionChange }: { activeSection: DashboardSection; onSectionChange: (section: DashboardSection) => void }) => {
   const { state, setOpenMobile } = useSidebar();
