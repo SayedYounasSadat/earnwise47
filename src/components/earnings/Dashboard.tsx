@@ -224,34 +224,53 @@ export const Dashboard = () => {
           {/* Timer Tab */}
           {activeSection === "timer" && (
           <section className="space-y-4 sm:space-y-6 animate-fade-in">
-            {/* Today's Quick Stats Bar */}
-            <div className="flex items-center gap-2 sm:gap-4 p-2.5 sm:p-3 rounded-xl bg-muted/50 text-sm overflow-x-auto">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <DollarSign className="w-3.5 h-3.5 text-accent" />
-                <span className="text-muted-foreground text-xs">Today</span>
-                <span className="font-bold text-foreground tabular-nums">${todayEarnings.toFixed(2)}</span>
+            {/* Status pill + Today's Quick Stats */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
+                isWorking && !isPaused && !isOnBreak
+                  ? "bg-success/10 text-success border-success/30"
+                  : isOnBreak
+                    ? "bg-warning/10 text-warning border-warning/30"
+                    : isPaused
+                      ? "bg-muted text-muted-foreground border-border"
+                      : "bg-muted/60 text-muted-foreground border-border"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  isWorking && !isPaused && !isOnBreak ? "bg-success animate-pulse" :
+                  isOnBreak ? "bg-warning" :
+                  isPaused ? "bg-muted-foreground" : "bg-muted-foreground/60"
+                }`} />
+                {isOnBreak ? "On break" : isPaused ? "Paused" : isWorking ? "Working" : "Idle"}
               </div>
-              <div className="w-px h-4 bg-border shrink-0" />
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Clock className="w-3.5 h-3.5 text-primary" />
-                <span className="font-medium text-foreground tabular-nums">{todayStats.hours.toFixed(1)}h</span>
+
+              <div className="flex items-center gap-3 sm:gap-4 px-3 py-1.5 rounded-full border border-border/70 bg-card text-xs sm:text-sm overflow-x-auto">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <DollarSign className="w-3.5 h-3.5 text-accent" />
+                  <span className="text-muted-foreground">Today</span>
+                  <span className="font-semibold text-foreground tabular-nums">${todayEarnings.toFixed(2)}</span>
+                </div>
+                <div className="w-px h-3.5 bg-border shrink-0" />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Clock className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-medium text-foreground tabular-nums">{todayStats.hours.toFixed(1)}h</span>
+                </div>
+                <div className="w-px h-3.5 bg-border shrink-0" />
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Zap className="w-3.5 h-3.5 text-primary" />
+                  <span className="font-medium text-foreground tabular-nums">{todayStats.sessions}</span>
+                  <span className="text-muted-foreground">sessions</span>
+                </div>
+                {shiftRemaining && settings.showShiftRemaining !== false && (
+                  <>
+                    <div className="w-px h-3.5 bg-border shrink-0" />
+                    <span className="text-muted-foreground shrink-0">⏰ {shiftRemaining}</span>
+                  </>
+                )}
               </div>
-              <div className="w-px h-4 bg-border shrink-0" />
-              <div className="flex items-center gap-1.5 shrink-0">
-                <Zap className="w-3.5 h-3.5 text-primary" />
-                <span className="font-medium text-foreground tabular-nums">{todayStats.sessions}</span>
-                <span className="text-muted-foreground text-xs">sessions</span>
-              </div>
-              {shiftRemaining && settings.showShiftRemaining !== false && (
-                <>
-                  <div className="w-px h-4 bg-border shrink-0" />
-                  <span className="text-xs text-muted-foreground shrink-0">⏰ {shiftRemaining}</span>
-                </>
-              )}
             </div>
 
             {/* Timer and Earnings Hero */}
-            <section className="glass-card rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8">
+            <section className="surface-card p-4 sm:p-6 md:p-8 shadow-sm">
               <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
                 <div className="flex flex-col items-center justify-center">
                   <TimerDisplay 
