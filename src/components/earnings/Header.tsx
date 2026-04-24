@@ -24,23 +24,27 @@ interface HeaderProps {
   } | null;
   onLogout?: () => void;
   sidebarTrigger?: ReactNode;
+  currentSection?: string;
+  onOpenCommand?: () => void;
 }
 
 const SyncIndicator = ({ status }: { status: "idle" | "syncing" | "synced" | "error" }) => {
   const config = {
-    idle: { icon: <Cloud className="w-4 h-4 text-muted-foreground" />, label: "Cloud connected" },
-    syncing: { icon: <Loader2 className="w-4 h-4 text-primary animate-spin" />, label: "Syncing..." },
-    synced: { icon: <Check className="w-4 h-4 text-accent" />, label: "All changes saved" },
-    error: { icon: <CloudOff className="w-4 h-4 text-destructive" />, label: "Offline or sync failed – will retry when connected" },
+    idle: { icon: <Cloud className="w-3.5 h-3.5 text-muted-foreground" />, label: "Cloud connected" },
+    syncing: { icon: <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />, label: "Syncing..." },
+    synced: { icon: <Check className="w-3.5 h-3.5 text-success" />, label: "All changes saved" },
+    error: { icon: <CloudOff className="w-3.5 h-3.5 text-destructive" />, label: "Offline – will retry when reconnected" },
   };
   const { icon, label } = config[status];
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/50 text-xs text-muted-foreground cursor-default select-none">
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs text-muted-foreground cursor-default select-none hover:bg-muted/60 transition-colors">
           {icon}
-          <span className="hidden sm:inline">{status === "syncing" ? "Syncing" : status === "synced" ? "Saved" : status === "error" ? "Error" : "Cloud"}</span>
+          <span className="hidden md:inline">
+            {status === "syncing" ? "Syncing" : status === "synced" ? "Saved" : status === "error" ? "Offline" : "Cloud"}
+          </span>
         </div>
       </TooltipTrigger>
       <TooltipContent side="bottom">
@@ -50,28 +54,32 @@ const SyncIndicator = ({ status }: { status: "idle" | "syncing" | "synced" | "er
   );
 };
 
-export const Header = memo(({ isDarkMode, onToggleDarkMode, syncStatus, user, onLogout, sidebarTrigger }: HeaderProps) => {
+export const Header = memo(({ isDarkMode, onToggleDarkMode, syncStatus, user, onLogout, sidebarTrigger, currentSection, onOpenCommand }: HeaderProps) => {
   const initials = user?.displayName
     ? user.displayName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.[0]?.toUpperCase() || "?";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/85 backdrop-blur-md">
+      <div className="flex h-14 items-center justify-between gap-2 px-3 sm:px-4">
+        {/* Left: trigger + brand + section context */}
+        <div className="flex items-center gap-2 min-w-0">
           {sidebarTrigger}
-          <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg">
-            <Wallet className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground tracking-tight">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-sm shrink-0">
+              <Wallet className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <h1 className="text-base font-semibold text-foreground tracking-tight hidden sm:block">
               EarnWise
             </h1>
-            <p className="text-xs text-muted-foreground">Track. Earn. Achieve.</p>
+            {currentSection && (
+              <>
+                <span className="text-muted-foreground/50 hidden sm:inline" aria-hidden>/</span>
+                <span className="text-sm font-medium text-muted-foreground truncate">{currentSection}</span>
+              </>
+            )}
           </div>
         </div>
-
         <div className="flex items-center gap-2">
           {/* Sync indicator */}
           {user && syncStatus && <SyncIndicator status={syncStatus} />}
