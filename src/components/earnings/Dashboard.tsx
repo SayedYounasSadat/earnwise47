@@ -100,6 +100,21 @@ export const Dashboard = () => {
 
   const [sessionNotes, setSessionNotes] = useState("");
   const [activeSection, setActiveSection] = useState<DashboardSection>("timer");
+  const [commandOpen, setCommandOpen] = useState(false);
+
+  // ⌘K / Ctrl+K to open command palette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const currentNav = NAV_ITEMS.find((n) => n.value === activeSection);
 
   const handleStop = useCallback(() => {
     stopWork(sessionNotes);
