@@ -444,19 +444,6 @@ const AppSidebar = ({ activeSection, onSectionChange }: { activeSection: Dashboa
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader className="px-3 py-4">
-        <div className="flex items-center gap-3 rounded-lg px-2 py-1.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Wallet className="h-4 w-4" />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-sidebar-foreground">EarnWise</p>
-              <p className="truncate text-xs text-sidebar-foreground/70">Workspace</p>
-            </div>
-          )}
-        </div>
-      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Main menu</SidebarGroupLabel>
