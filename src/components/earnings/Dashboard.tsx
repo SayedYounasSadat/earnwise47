@@ -193,19 +193,33 @@ export const Dashboard = () => {
           photoURL: user.photoURL,
         } : null}
         onLogout={logout}
-        sidebarTrigger={<SidebarTrigger className="mr-2 h-9 w-9 rounded-full" />}
+        sidebarTrigger={<SidebarTrigger className="mr-1 h-8 w-8 rounded-md" />}
+        currentSection={currentNav?.label}
+        onOpenCommand={() => setCommandOpen(true)}
       />
 
-      <main className="container px-3 sm:px-4 py-3 sm:py-4 md:py-6 max-w-5xl mx-auto">
-        {/* Hero Progress Bar */}
-        <section className="mb-4 sm:mb-6 animate-fade-in">
-          <ProgressCard 
-            currentEarnings={todayEarnings} 
-            dailyGoal={todayGoal}
-            isWorking={isWorking && !isPaused && !isOnBreak}
-          />
-        </section>
+      <main className="container px-3 sm:px-4 py-4 sm:py-5 md:py-6 max-w-5xl mx-auto pb-24 md:pb-6">
+        {/* Section header */}
+        {currentNav && (
+          <div className="mb-4 sm:mb-5 animate-fade-in">
+            <h2 className="section-title flex items-center gap-2">
+              <currentNav.icon className="w-5 h-5 text-muted-foreground" />
+              {currentNav.label}
+            </h2>
+            <p className="section-subtitle">{currentNav.description}</p>
+          </div>
+        )}
 
+        {/* Hero Progress Bar — only on timer view */}
+        {activeSection === "timer" && (
+          <section className="mb-4 sm:mb-6 animate-fade-in">
+            <ProgressCard
+              currentEarnings={todayEarnings}
+              dailyGoal={todayGoal}
+              isWorking={isWorking && !isPaused && !isOnBreak}
+            />
+          </section>
+        )}
         {/* Main menu content */}
           {/* Timer Tab */}
           {activeSection === "timer" && (
