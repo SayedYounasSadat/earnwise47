@@ -1,6 +1,6 @@
 // App header with dark mode toggle and user menu
 import { memo, type ReactNode } from "react";
-import { Moon, Sun, Wallet, LogOut, User, Cloud, CloudOff, Loader2, Check } from "lucide-react";
+import { Moon, Sun, Wallet, LogOut, User, Cloud, CloudOff, Loader2, Check, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -80,7 +80,28 @@ export const Header = memo(({ isDarkMode, onToggleDarkMode, syncStatus, user, on
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Command palette */}
+          {onOpenCommand && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onOpenCommand}
+                  className={cn(
+                    "hidden md:inline-flex items-center gap-2 h-8 px-2.5 rounded-md",
+                    "text-xs text-muted-foreground border border-border/70 bg-muted/40",
+                    "hover:bg-muted hover:text-foreground transition-colors"
+                  )}
+                  aria-label="Search & quick navigate"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  <span>Search</span>
+                  <kbd className="ml-1 px-1.5 py-0.5 rounded bg-background/80 border border-border/70 text-[10px] font-mono">⌘K</kbd>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom"><p>Quick navigate (⌘K)</p></TooltipContent>
+            </Tooltip>
+          )}
           {/* Sync indicator */}
           {user && syncStatus && <SyncIndicator status={syncStatus} />}
           {/* Dark mode toggle */}
@@ -88,17 +109,14 @@ export const Header = memo(({ isDarkMode, onToggleDarkMode, syncStatus, user, on
             variant="ghost"
             size="icon"
             onClick={onToggleDarkMode}
-            className={cn(
-              "rounded-full transition-all duration-300",
-              "hover:bg-muted hover:scale-105"
-            )}
+            className="h-9 w-9 rounded-full hover:bg-muted transition-colors"
+            aria-label="Toggle theme"
           >
             {isDarkMode ? (
-              <Sun className="w-5 h-5 text-accent transition-transform duration-300 rotate-0" />
+              <Sun className="w-[18px] h-[18px] text-accent" />
             ) : (
-              <Moon className="w-5 h-5 text-primary transition-transform duration-300 rotate-0" />
+              <Moon className="w-[18px] h-[18px] text-primary" />
             )}
-            <span className="sr-only">Toggle theme</span>
           </Button>
 
           {/* User menu */}
