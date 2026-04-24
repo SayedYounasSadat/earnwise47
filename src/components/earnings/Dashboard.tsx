@@ -392,35 +392,24 @@ export const Dashboard = () => {
                 exchangeRate={settings.exchangeRate}
                 currencyCode={settings.currencyCode}
               />
-              <div className="glass-card rounded-xl p-4 sm:p-6">
-                <h3 className="font-semibold text-foreground mb-4">Performance Insights</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm text-muted-foreground">Total Sessions</span>
-                    <span className="font-bold text-foreground tabular-nums">{sessions.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm text-muted-foreground">Total Hours</span>
-                    <span className="font-bold text-foreground tabular-nums">
-                      {(sessions.reduce((sum, s) => sum + s.duration, 0) / 3600).toFixed(1)}h
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm text-muted-foreground">Lifetime Earnings</span>
-                    <span className="font-bold text-accent tabular-nums">
-                      ${sessions.reduce((sum, s) => sum + s.earnings, 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm text-muted-foreground">Avg. Session</span>
-                    <span className="font-bold text-foreground tabular-nums">
-                      {sessions.length > 0 
-                        ? `${Math.round(sessions.reduce((sum, s) => sum + s.duration, 0) / sessions.length / 60)}m`
-                        : "0m"
-                      }
-                    </span>
-                  </div>
+              <div className="surface-card p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-foreground">Performance Insights</h3>
+                  <span className="text-xs text-muted-foreground">All-time</span>
                 </div>
+                <dl className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: "Total sessions", value: sessions.length.toString() },
+                    { label: "Total hours", value: `${(sessions.reduce((sum, s) => sum + s.duration, 0) / 3600).toFixed(1)}h` },
+                    { label: "Lifetime earnings", value: `$${sessions.reduce((sum, s) => sum + s.earnings, 0).toFixed(2)}`, accent: true },
+                    { label: "Avg. session", value: sessions.length > 0 ? `${Math.round(sessions.reduce((sum, s) => sum + s.duration, 0) / sessions.length / 60)}m` : "0m" },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-lg border border-border/60 bg-muted/30 p-3">
+                      <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</dt>
+                      <dd className={`mt-1 text-lg font-semibold tabular-nums ${s.accent ? "text-accent" : "text-foreground"}`}>{s.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
             </div>
           </section>
