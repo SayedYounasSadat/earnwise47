@@ -4,11 +4,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useEarningsTracker } from "@/hooks/useEarningsTracker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Header } from "./Header";
-import { TimerDisplay } from "./TimerDisplay";
-import { EarningsDisplay } from "./EarningsDisplay";
-import { TimerControls } from "./TimerControls";
+import { TimerHero } from "./TimerHero";
+import { RecentSessionsPreview } from "./RecentSessionsPreview";
 import { BreakControls } from "./BreakControls";
-import { ProgressCard } from "./ProgressCard";
+
 import { TotalsCard } from "./TotalsCard";
 import { SettingsCard } from "./SettingsCard";
 import { SessionLogsCard } from "./SessionLogsCard";
@@ -25,13 +24,13 @@ import { StreakAchievements } from "./StreakAchievements";
 import { OvertimeCard } from "./OvertimeCard";
 import { MissedTimeCard } from "./MissedTimeCard";
 import { WorldClockWidget } from "./WorldClockWidget";
-import { KeyboardShortcutsHint } from "./KeyboardShortcutsHint";
+
 const BudgetTab = lazy(() => import("./BudgetTab").then(m => ({ default: m.BudgetTab })));
 const StudyTab = lazy(() => import("./StudyTab").then(m => ({ default: m.StudyTab })));
 import { FinancialHealthCard } from "./FinancialHealthCard";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { generatePDFReport } from "@/utils/pdfExport";
-import { Home, BarChart3, History, Settings, Calendar, Clock, DollarSign, Zap, Wallet, BookOpen, type LucideIcon } from "lucide-react";
+import { Home, BarChart3, History, Settings, Calendar, Wallet, BookOpen, type LucideIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -210,116 +209,61 @@ export const Dashboard = () => {
           </div>
         )}
 
-        {/* Hero Progress Bar — only on timer view */}
-        {activeSection === "timer" && (
-          <section className="mb-4 sm:mb-6 animate-fade-in">
-            <ProgressCard
-              currentEarnings={todayEarnings}
-              dailyGoal={todayGoal}
-              isWorking={isWorking && !isPaused && !isOnBreak}
-            />
-          </section>
-        )}
         {/* Main menu content */}
           {/* Timer Tab */}
           {activeSection === "timer" && (
           <section className="space-y-4 sm:space-y-6 animate-fade-in">
-            {/* Status pill + Today's Quick Stats */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
-                isWorking && !isPaused && !isOnBreak
-                  ? "bg-success/10 text-success border-success/30"
-                  : isOnBreak
-                    ? "bg-warning/10 text-warning border-warning/30"
-                    : isPaused
-                      ? "bg-muted text-muted-foreground border-border"
-                      : "bg-muted/60 text-muted-foreground border-border"
-              }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${
-                  isWorking && !isPaused && !isOnBreak ? "bg-success animate-pulse" :
-                  isOnBreak ? "bg-warning" :
-                  isPaused ? "bg-muted-foreground" : "bg-muted-foreground/60"
-                }`} />
-                {isOnBreak ? "On break" : isPaused ? "Paused" : isWorking ? "Working" : "Idle"}
-              </div>
+            <TimerHero
+              isWorking={isWorking}
+              isPaused={isPaused}
+              isOnBreak={isOnBreak}
+              currentDuration={currentDuration}
+              currentEarnings={currentEarnings}
+              exchangeRate={settings.exchangeRate}
+              currencyCode={settings.currencyCode}
+              todayEarnings={todayEarnings}
+              dailyGoal={todayGoal}
+              shiftRemaining={shiftRemaining}
+              showShiftRemaining={settings.showShiftRemaining !== false}
+              displayName={user?.displayName ?? null}
+              onStart={startWork}
+              onStop={handleStop}
+              onPause={pauseWork}
+              onResume={resumeWork}
+              onReset={resetSession}
+            />
 
-              <div className="flex items-center gap-3 sm:gap-4 px-3 py-1.5 rounded-full border border-border/70 bg-card text-xs sm:text-sm overflow-x-auto">
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <DollarSign className="w-3.5 h-3.5 text-accent" />
-                  <span className="text-muted-foreground">Today</span>
-                  <span className="font-semibold text-foreground tabular-nums">${todayEarnings.toFixed(2)}</span>
+            {isWorking && (
+              <BreakControls
+                isOnBreak={isOnBreak}
+                currentBreakType={currentBreakType}
+                breakDuration={breakDuration}
+                breakUsage={dailyBreakUsage}
+                onStartBreak={startBreak}
+                onEndBreak={endBreak}
+              />
+            )}
+
+            {/* Quick stats strip */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {[
+                { label: "Today", value: `$${todayEarnings.toFixed(2)}`, sub: `${todayStats.hours.toFixed(1)}h` },
+                { label: "This week", value: `$${weekEarnings.toFixed(2)}`, sub: "earned" },
+                { label: "Sessions", value: `${todayStats.sessions}`, sub: "today" },
+              ].map((s) => (
+                <div key={s.label} className="surface-card p-3 sm:p-4">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{s.label}</p>
+                  <p className="mt-1 text-lg sm:text-xl font-semibold tabular-nums text-foreground">{s.value}</p>
+                  <p className="text-[11px] text-muted-foreground tabular-nums">{s.sub}</p>
                 </div>
-                <div className="w-px h-3.5 bg-border shrink-0" />
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Clock className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-medium text-foreground tabular-nums">{todayStats.hours.toFixed(1)}h</span>
-                </div>
-                <div className="w-px h-3.5 bg-border shrink-0" />
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Zap className="w-3.5 h-3.5 text-primary" />
-                  <span className="font-medium text-foreground tabular-nums">{todayStats.sessions}</span>
-                  <span className="text-muted-foreground">sessions</span>
-                </div>
-                {shiftRemaining && settings.showShiftRemaining !== false && (
-                  <>
-                    <div className="w-px h-3.5 bg-border shrink-0" />
-                    <span className="text-muted-foreground shrink-0">⏰ {shiftRemaining}</span>
-                  </>
-                )}
-              </div>
+              ))}
             </div>
 
-            {/* Timer and Earnings Hero */}
-            <section className="surface-card p-4 sm:p-6 md:p-8 shadow-sm">
-              <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
-                <div className="flex flex-col items-center justify-center">
-                  <TimerDisplay 
-                    seconds={currentDuration} 
-                    isActive={isWorking} 
-                    isPaused={isPaused}
-                    shiftRemaining={settings.showShiftRemaining !== false ? shiftRemaining : null}
-                  />
-                </div>
-
-                <div className="flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-border pt-6 sm:pt-8 md:pt-0 md:pl-8">
-                  <EarningsDisplay
-                    usdAmount={currentEarnings}
-                    exchangeRate={settings.exchangeRate}
-                    currencyCode={settings.currencyCode}
-                    isActive={isWorking && !isPaused}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-border space-y-3">
-                <div className="flex items-center justify-center">
-                  <KeyboardShortcutsHint />
-                </div>
-                <TimerControls
-                  isWorking={isWorking}
-                  isPaused={isPaused}
-                  isOnBreak={isOnBreak}
-                  onStart={startWork}
-                  onStop={handleStop}
-                  onPause={pauseWork}
-                  onResume={resumeWork}
-                  onReset={resetSession}
-                />
-              </div>
-
-              {isWorking && (
-                <div className="mt-6">
-                  <BreakControls
-                    isOnBreak={isOnBreak}
-                    currentBreakType={currentBreakType}
-                    breakDuration={breakDuration}
-                    breakUsage={dailyBreakUsage}
-                    onStartBreak={startBreak}
-                    onEndBreak={endBreak}
-                  />
-                </div>
-              )}
-            </section>
+            {/* Recent sessions QoL */}
+            <RecentSessionsPreview
+              sessions={sessions}
+              onViewAll={() => setActiveSection("logs")}
+            />
 
             {/* Quick Stats + Pomodoro + Clock */}
             <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
