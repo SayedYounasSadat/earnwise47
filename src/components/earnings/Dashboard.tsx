@@ -7,7 +7,7 @@ import { Header } from "./Header";
 import { TimerHero } from "./TimerHero";
 import { RecentSessionsPreview } from "./RecentSessionsPreview";
 import { BreakControls } from "./BreakControls";
-import { ProgressCard } from "./ProgressCard";
+
 import { TotalsCard } from "./TotalsCard";
 import { SettingsCard } from "./SettingsCard";
 import { SessionLogsCard } from "./SessionLogsCard";
@@ -24,13 +24,13 @@ import { StreakAchievements } from "./StreakAchievements";
 import { OvertimeCard } from "./OvertimeCard";
 import { MissedTimeCard } from "./MissedTimeCard";
 import { WorldClockWidget } from "./WorldClockWidget";
-import { KeyboardShortcutsHint } from "./KeyboardShortcutsHint";
+
 const BudgetTab = lazy(() => import("./BudgetTab").then(m => ({ default: m.BudgetTab })));
 const StudyTab = lazy(() => import("./StudyTab").then(m => ({ default: m.StudyTab })));
 import { FinancialHealthCard } from "./FinancialHealthCard";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { generatePDFReport } from "@/utils/pdfExport";
-import { Home, BarChart3, History, Settings, Calendar, Clock, DollarSign, Zap, Wallet, BookOpen, type LucideIcon } from "lucide-react";
+import { Home, BarChart3, History, Settings, Calendar, Wallet, BookOpen, type LucideIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
