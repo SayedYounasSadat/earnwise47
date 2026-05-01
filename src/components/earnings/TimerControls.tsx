@@ -87,7 +87,7 @@ export const TimerControls = memo(
 
     const resetButton = (
       <ActionButton
-        onClick={onReset}
+        onClick={handleResetClick}
         icon={RotateCcw}
         label="Reset"
         shortcut="R"
