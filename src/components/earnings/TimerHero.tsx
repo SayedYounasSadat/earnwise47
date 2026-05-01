@@ -1,5 +1,5 @@
 // Timer hero — refined minimal centerpiece with goal-ring around the timer
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { TimerDisplay } from "./TimerDisplay";
 import { EarningsDisplay } from "./EarningsDisplay";
@@ -64,7 +64,41 @@ export const TimerHero = memo((props: TimerHeroProps) => {
   const stroke = 6;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  const dash = (goalProgress / 100) * circumference;
+
+  // Smoothly animate goalProgress with rAF for buttery real-time updates.
+  // When the goal is reached, snap to 100% with a brief celebratory pulse.
+  const [animatedProgress, setAnimatedProgress] = useState(goalProgress);
+  const [justReachedGoal, setJustReachedGoal] = useState(false);
+  const reachedRef = useRef(false);
+
+  useEffect(() => {
+    // Snap behavior when crossing the goal threshold
+    if (isGoalReached && !reachedRef.current) {
+      reachedRef.current = true;
+      setAnimatedProgress(100);
+      setJustReachedGoal(true);
+      const t = setTimeout(() => setJustReachedGoal(false), 1400);
+      return () => clearTimeout(t);
+    }
+    if (!isGoalReached && reachedRef.current) {
+      reachedRef.current = false;
+    }
+
+    // Smooth lerp toward target
+    let raf: number;
+    const animate = () => {
+      setAnimatedProgress((prev) => {
+        const diff = goalProgress - prev;
+        if (Math.abs(diff) < 0.05) return goalProgress;
+        return prev + diff * 0.18;
+      });
+      raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, [goalProgress, isGoalReached]);
+
+  const dash = (animatedProgress / 100) * circumference;
 
   // pace per hour, only meaningful when we have some duration
   const pacePerHour = useMemo(() => {
