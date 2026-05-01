@@ -155,6 +155,27 @@ export const TimerControls = memo(
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Confirmation dialog for resetting */}
+        <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                Reset timer?
+                <Kbd className="ml-1">R</Kbd>
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will discard the current timer without saving. Your elapsed time and earnings for this session will be lost.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep Timer</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Reset
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </>
     );
   }
