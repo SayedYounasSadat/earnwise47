@@ -19,6 +19,52 @@ interface TimerControlsProps {
   onReset: () => void;
 }
 
+const Kbd = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <kbd
+    className={cn(
+      "inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded",
+      "bg-muted/70 border border-border/60 text-[10px] font-mono font-semibold",
+      "text-muted-foreground leading-none",
+      className,
+    )}
+  >
+    {children}
+  </kbd>
+);
+
+const ActionButton = ({
+  onClick,
+  icon: Icon,
+  label,
+  shortcut,
+  className,
+  variant = "default",
+}: {
+  onClick: () => void;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  shortcut: string;
+  className?: string;
+  variant?: "default" | "outline";
+}) => (
+  <div className="flex flex-col items-center gap-1.5">
+    <Button
+      onClick={onClick}
+      size="lg"
+      variant={variant === "outline" ? "outline" : "default"}
+      className={cn(
+        "h-11 sm:h-14 px-5 sm:px-7 text-base sm:text-lg font-semibold rounded-full",
+        "transition-all duration-200 hover:scale-105",
+        className,
+      )}
+    >
+      <Icon className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+      {label}
+    </Button>
+    <Kbd>{shortcut}</Kbd>
+  </div>
+);
+
 export const TimerControls = memo(
   ({ isWorking, isPaused, isOnBreak, onStart, onStop, onPause, onResume, onReset }: TimerControlsProps) => {
     const [confirmStop, setConfirmStop] = useState(false);
@@ -27,67 +73,45 @@ export const TimerControls = memo(
     const handleConfirmStop = () => { setConfirmStop(false); onStop(); };
 
     const stopButton = (
-      <Button
+      <ActionButton
         onClick={handleStopClick}
-        size="lg"
-        className={cn(
-          "h-11 sm:h-14 px-4 sm:px-6 text-base sm:text-lg font-semibold rounded-full",
-          "bg-destructive hover:bg-destructive/90 text-destructive-foreground",
-          "transition-all duration-200 hover:scale-105"
-        )}
-      >
-        <Square className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-        {isOnBreak ? "End Session" : "Stop"}
-      </Button>
+        icon={Square}
+        label={isOnBreak ? "End Session" : "Stop"}
+        shortcut="Esc"
+        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+      />
     );
 
     const resetButton = (
-      <Button
+      <ActionButton
         onClick={onReset}
-        size="lg"
+        icon={RotateCcw}
+        label="Reset"
+        shortcut="R"
         variant="outline"
-        className={cn(
-          "h-11 sm:h-14 px-4 sm:px-6 text-base sm:text-lg font-semibold rounded-full",
-          "transition-all duration-200 hover:scale-105"
-        )}
-      >
-        <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-        Reset
-      </Button>
+      />
     );
 
     return (
       <>
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4">
+        <div className="flex flex-wrap items-start justify-center gap-3 sm:gap-4">
           {!isWorking && !isPaused ? (
-            <Button
+            <ActionButton
               onClick={onStart}
-              size="lg"
-              className={cn(
-                "h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg font-semibold rounded-full",
-                "bg-success hover:bg-success/90 text-success-foreground",
-                "transition-all duration-200 hover:scale-105 hover:shadow-lg",
-                "glow-success"
-              )}
-            >
-              <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-              Start Working
-            </Button>
+              icon={Play}
+              label="Start Working"
+              shortcut="Space"
+              className="bg-success hover:bg-success/90 text-success-foreground glow-success hover:shadow-lg"
+            />
           ) : isPaused ? (
             <>
-              <Button
+              <ActionButton
                 onClick={onResume}
-                size="lg"
-                className={cn(
-                  "h-11 sm:h-14 px-5 sm:px-8 text-base sm:text-lg font-semibold rounded-full",
-                  "bg-success hover:bg-success/90 text-success-foreground",
-                  "transition-all duration-200 hover:scale-105 hover:shadow-lg",
-                  "glow-success"
-                )}
-              >
-                <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                Resume
-              </Button>
+                icon={Play}
+                label="Resume"
+                shortcut="Space"
+                className="bg-success hover:bg-success/90 text-success-foreground glow-success hover:shadow-lg"
+              />
               {stopButton}
               {resetButton}
             </>
@@ -98,18 +122,13 @@ export const TimerControls = memo(
             </>
           ) : (
             <>
-              <Button
+              <ActionButton
                 onClick={onPause}
-                size="lg"
-                className={cn(
-                  "h-11 sm:h-14 px-5 sm:px-8 text-base sm:text-lg font-semibold rounded-full",
-                  "bg-muted hover:bg-muted/90 text-muted-foreground",
-                  "transition-all duration-200 hover:scale-105 hover:shadow-lg"
-                )}
-              >
-                <Pause className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-                Quick Pause
-              </Button>
+                icon={Pause}
+                label="Quick Pause"
+                shortcut="Space"
+                className="bg-muted hover:bg-muted/90 text-muted-foreground hover:shadow-lg"
+              />
               {stopButton}
               {resetButton}
             </>
