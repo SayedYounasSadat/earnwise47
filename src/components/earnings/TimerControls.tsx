@@ -68,9 +68,12 @@ const ActionButton = ({
 export const TimerControls = memo(
   ({ isWorking, isPaused, isOnBreak, onStart, onStop, onPause, onResume, onReset }: TimerControlsProps) => {
     const [confirmStop, setConfirmStop] = useState(false);
+    const [confirmReset, setConfirmReset] = useState(false);
 
     const handleStopClick = () => setConfirmStop(true);
     const handleConfirmStop = () => { setConfirmStop(false); onStop(); };
+    const handleResetClick = () => setConfirmReset(true);
+    const handleConfirmReset = () => { setConfirmReset(false); onReset(); };
 
     const stopButton = (
       <ActionButton
@@ -84,7 +87,7 @@ export const TimerControls = memo(
 
     const resetButton = (
       <ActionButton
-        onClick={onReset}
+        onClick={handleResetClick}
         icon={RotateCcw}
         label="Reset"
         shortcut="R"
@@ -148,6 +151,27 @@ export const TimerControls = memo(
               <AlertDialogCancel>Keep Working</AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirmStop} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 End Session
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Confirmation dialog for resetting */}
+        <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                Reset timer?
+                <Kbd className="ml-1">R</Kbd>
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will discard the current timer without saving. Your elapsed time and earnings for this session will be lost.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep Timer</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmReset} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Reset
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
