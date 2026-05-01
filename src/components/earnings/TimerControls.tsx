@@ -68,9 +68,12 @@ const ActionButton = ({
 export const TimerControls = memo(
   ({ isWorking, isPaused, isOnBreak, onStart, onStop, onPause, onResume, onReset }: TimerControlsProps) => {
     const [confirmStop, setConfirmStop] = useState(false);
+    const [confirmReset, setConfirmReset] = useState(false);
 
     const handleStopClick = () => setConfirmStop(true);
     const handleConfirmStop = () => { setConfirmStop(false); onStop(); };
+    const handleResetClick = () => setConfirmReset(true);
+    const handleConfirmReset = () => { setConfirmReset(false); onReset(); };
 
     const stopButton = (
       <ActionButton
