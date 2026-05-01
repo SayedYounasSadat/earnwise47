@@ -172,7 +172,13 @@ export const TimerHero = memo((props: TimerHeroProps) => {
         <div className="grid gap-6 sm:gap-8 md:grid-cols-2 items-center">
           {/* Ring around timer */}
           <div className="flex items-center justify-center">
-            <div className="relative" style={{ width: size, height: size, maxWidth: "100%" }}>
+            <div
+              className={cn(
+                "relative transition-transform duration-500",
+                justReachedGoal && "animate-scale-in"
+              )}
+              style={{ width: size, height: size, maxWidth: "100%" }}
+            >
               <svg
                 viewBox={`0 0 ${size} ${size}`}
                 className="w-full h-full -rotate-90"
@@ -185,6 +191,18 @@ export const TimerHero = memo((props: TimerHeroProps) => {
                   strokeWidth={stroke}
                   className="stroke-muted fill-none"
                 />
+                {/* Glow halo when goal reached */}
+                {isGoalReached && (
+                  <circle
+                    cx={size / 2}
+                    cy={size / 2}
+                    r={radius}
+                    strokeWidth={stroke + 4}
+                    strokeLinecap="round"
+                    className="fill-none stroke-success/30 animate-pulse"
+                    strokeDasharray={`${circumference} 0`}
+                  />
+                )}
                 <circle
                   cx={size / 2}
                   cy={size / 2}
@@ -192,8 +210,9 @@ export const TimerHero = memo((props: TimerHeroProps) => {
                   strokeWidth={stroke}
                   strokeLinecap="round"
                   className={cn(
-                    "fill-none transition-all duration-700 ease-out",
-                    isGoalReached ? "stroke-success" : status.ring
+                    "fill-none transition-[stroke] duration-500 ease-out",
+                    isGoalReached ? "stroke-success" : status.ring,
+                    justReachedGoal && "drop-shadow-[0_0_8px_hsl(var(--success)/0.6)]"
                   )}
                   strokeDasharray={`${dash} ${circumference - dash}`}
                 />
