@@ -100,6 +100,9 @@ export const DEFAULT_SETTINGS: Settings = {
   overtimeMultiplier: 1.5,
   showShiftRemaining: true,
   usePacificDST: true, // Default to PDT (March-November)
+  confirmReset: true,
+  confirmStop: true,
+  autoSaveBeforeReset: true,
 };
 
 export const DEFAULT_SCHEDULE: ScheduleEntry[] = [
