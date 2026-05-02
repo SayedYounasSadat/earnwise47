@@ -58,6 +58,9 @@ export interface Settings {
   overtimeMultiplier: number; // e.g. 1.5x for overtime pay
   showShiftRemaining: boolean; // show remaining shift time on timer
   usePacificDST: boolean; // true = PDT (summer), false = PST (winter)
+  confirmReset: boolean; // show confirmation dialog before resetting timer
+  confirmStop: boolean; // show confirmation dialog before stopping session
+  autoSaveBeforeReset: boolean; // snapshot session to localStorage before reset for undo
 }
 
 export interface AppState {
