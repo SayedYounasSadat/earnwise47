@@ -30,6 +30,8 @@ const StudyTab = lazy(() => import("./StudyTab").then(m => ({ default: m.StudyTa
 import { FinancialHealthCard } from "./FinancialHealthCard";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { generatePDFReport } from "@/utils/pdfExport";
+import { toast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { Home, BarChart3, History, Settings, Calendar, Wallet, BookOpen, type LucideIcon } from "lucide-react";
 import {
   Sidebar,
