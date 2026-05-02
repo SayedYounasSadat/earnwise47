@@ -1,6 +1,6 @@
 // Settings card for hourly rate, exchange rate, and daily goal
 import { memo, useState, useEffect } from "react";
-import { Settings as SettingsIcon, DollarSign, RefreshCw, Target, Clock, Timer, Globe } from "lucide-react";
+import { Settings as SettingsIcon, DollarSign, RefreshCw, Target, Clock, Timer, Globe, ShieldAlert, Save } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -167,6 +167,54 @@ export const SettingsCard = memo(({ settings, onUpdate }: SettingsCardProps) => 
           <span className="text-xs text-muted-foreground ml-2">
             {(settings.usePacificDST ?? true) ? "PDT (UTC-7)" : "PST (UTC-8)"}
           </span>
+        </div>
+
+        {/* Timer safety */}
+        <div className="pt-4 border-t border-border space-y-3">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+            Timer safety
+          </p>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="confirmReset" className="flex items-center gap-2 text-sm cursor-pointer">
+              <ShieldAlert className="w-4 h-4 text-muted-foreground" />
+              Confirm before Reset
+            </Label>
+            <Switch
+              id="confirmReset"
+              checked={settings.confirmReset !== false}
+              onCheckedChange={(checked) => onUpdate({ confirmReset: checked })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="confirmStop" className="flex items-center gap-2 text-sm cursor-pointer">
+              <ShieldAlert className="w-4 h-4 text-muted-foreground" />
+              Confirm before Stop
+            </Label>
+            <Switch
+              id="confirmStop"
+              checked={settings.confirmStop !== false}
+              onCheckedChange={(checked) => onUpdate({ confirmStop: checked })}
+            />
+          </div>
+
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <Label htmlFor="autoSaveBeforeReset" className="flex items-center gap-2 text-sm cursor-pointer">
+                <Save className="w-4 h-4 text-muted-foreground" />
+                Auto-save before Reset
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Snapshot the current session so you can Undo a reset within 5 minutes.
+              </p>
+            </div>
+            <Switch
+              id="autoSaveBeforeReset"
+              checked={settings.autoSaveBeforeReset !== false}
+              onCheckedChange={(checked) => onUpdate({ autoSaveBeforeReset: checked })}
+            />
+          </div>
         </div>
 
         {/* Quick stats */}

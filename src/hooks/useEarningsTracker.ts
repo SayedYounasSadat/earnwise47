@@ -19,6 +19,21 @@ import { toast } from "@/hooks/use-toast";
 import { loadUserData, saveUserData } from "@/services/firestoreSync";
 
 const STORAGE_KEY = "earnings-tracker-data";
+const RESET_SNAPSHOT_KEY = "earnings-tracker-reset-snapshot";
+const RESET_SNAPSHOT_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+interface ResetSnapshot {
+  savedAt: number;
+  isWorking: boolean;
+  isPaused: boolean;
+  isOnBreak: boolean;
+  currentBreakType: BreakType | null;
+  currentBreakStart: number | null;
+  currentSessionBreaks: BreakSession[];
+  currentSessionStart: number | null;
+  currentSessionDuration: number;
+  accumulatedDuration: number;
+}
 
 // Generate unique ID
 const generateId = (): string => {
@@ -695,25 +710,83 @@ export const useEarningsTracker = (userId?: string | null) => {
     [state.isWorking, state.isPaused, state.isOnBreak, state.currentSessionDuration, state.currentSessionBreaks, state.settings.hourlyRate, endBreak]
   );
 
-  // Reset current session
+  // Reset current session (snapshots first if autoSaveBeforeReset is on)
   const resetSession = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      isWorking: false,
-      isPaused: false,
-      isOnBreak: false,
-      currentBreakType: null,
-      currentBreakStart: null,
-      currentSessionBreaks: [],
-      currentSessionStart: null,
-      currentSessionDuration: 0,
-      accumulatedDuration: 0,
-    }));
+    setState((prev) => {
+      // Snapshot current timer state for undo, if enabled and there's something to undo
+      if (
+        prev.settings.autoSaveBeforeReset &&
+        (prev.isWorking || prev.isPaused || prev.isOnBreak || prev.currentSessionDuration > 0)
+      ) {
+        try {
+          const snapshot: ResetSnapshot = {
+            savedAt: Date.now(),
+            isWorking: prev.isWorking,
+            isPaused: prev.isPaused,
+            isOnBreak: prev.isOnBreak,
+            currentBreakType: prev.currentBreakType,
+            currentBreakStart: prev.currentBreakStart,
+            currentSessionBreaks: prev.currentSessionBreaks,
+            currentSessionStart: prev.currentSessionStart,
+            currentSessionDuration: prev.currentSessionDuration,
+            accumulatedDuration: prev.accumulatedDuration,
+          };
+          localStorage.setItem(RESET_SNAPSHOT_KEY, JSON.stringify(snapshot));
+        } catch (e) {
+          console.error("Failed to save reset snapshot:", e);
+        }
+      }
 
-    toast({
-      title: "🔄 Session Reset",
-      description: "Current session has been cleared.",
+      return {
+        ...prev,
+        isWorking: false,
+        isPaused: false,
+        isOnBreak: false,
+        currentBreakType: null,
+        currentBreakStart: null,
+        currentSessionBreaks: [],
+        currentSessionStart: null,
+        currentSessionDuration: 0,
+        accumulatedDuration: 0,
+      };
     });
+  }, []);
+
+  // Undo a reset by restoring the snapshot (if recent enough)
+  const undoReset = useCallback((): boolean => {
+    try {
+      const raw = localStorage.getItem(RESET_SNAPSHOT_KEY);
+      if (!raw) return false;
+      const snap: ResetSnapshot = JSON.parse(raw);
+      if (!snap || Date.now() - snap.savedAt > RESET_SNAPSHOT_TTL_MS) {
+        localStorage.removeItem(RESET_SNAPSHOT_KEY);
+        return false;
+      }
+
+      // If the timer was running, advance accumulated duration to absorb the gap
+      // and restart from "now" so the user doesn't lose the elapsed time but doesn't
+      // get credit for the time spent reading the toast either.
+      const wasRunning = snap.isWorking && !snap.isPaused && !snap.isOnBreak;
+
+      setState((prev) => ({
+        ...prev,
+        isWorking: snap.isWorking,
+        isPaused: wasRunning ? true : snap.isPaused, // restore paused so user can resume intentionally
+        isOnBreak: snap.isOnBreak,
+        currentBreakType: snap.currentBreakType,
+        currentBreakStart: snap.currentBreakStart,
+        currentSessionBreaks: snap.currentSessionBreaks,
+        currentSessionStart: null,
+        currentSessionDuration: snap.currentSessionDuration,
+        accumulatedDuration: snap.currentSessionDuration,
+      }));
+
+      localStorage.removeItem(RESET_SNAPSHOT_KEY);
+      return true;
+    } catch (e) {
+      console.error("Failed to undo reset:", e);
+      return false;
+    }
   }, []);
 
   // Update settings
@@ -989,6 +1062,7 @@ export const useEarningsTracker = (userId?: string | null) => {
     resumeWork,
     stopWork,
     resetSession,
+    undoReset,
     updateSettings,
     updateSchedule,
     exportJSON,
