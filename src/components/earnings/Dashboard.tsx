@@ -263,7 +263,9 @@ export const Dashboard = () => {
               onStop={handleStop}
               onPause={pauseWork}
               onResume={resumeWork}
-              onReset={resetSession}
+              onReset={handleReset}
+              confirmReset={settings.confirmReset !== false}
+              confirmStop={settings.confirmStop !== false}
             />
 
             {isWorking && (
