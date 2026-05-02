@@ -17,6 +17,8 @@ interface TimerControlsProps {
   onPause: () => void;
   onResume: () => void;
   onReset: () => void;
+  confirmReset?: boolean;
+  confirmStop?: boolean;
 }
 
 const Kbd = ({ children, className }: { children: React.ReactNode; className?: string }) => (
