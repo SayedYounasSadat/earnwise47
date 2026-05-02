@@ -135,6 +135,36 @@ export const Dashboard = () => {
     setSessionNotes("");
   }, [stopWork, sessionNotes]);
 
+  const handleReset = useCallback(() => {
+    const hadSomething = isWorking || isPaused || isOnBreak || currentDuration > 0;
+    resetSession();
+    if (hadSomething && settings.autoSaveBeforeReset) {
+      toast({
+        title: "🔄 Session Reset",
+        description: "Restore the previous session within 5 minutes.",
+        action: (
+          <ToastAction
+            altText="Undo reset"
+            onClick={() => {
+              const restored = undoReset();
+              toast({
+                title: restored ? "↩️ Session Restored" : "⚠️ Nothing to Restore",
+                description: restored
+                  ? "Resume the timer to continue where you left off."
+                  : "The previous session is no longer available.",
+                variant: restored ? "default" : "destructive",
+              });
+            }}
+          >
+            Undo
+          </ToastAction>
+        ),
+      });
+    } else if (hadSomething) {
+      toast({ title: "🔄 Session Reset", description: "Current session has been cleared." });
+    }
+  }, [isWorking, isPaused, isOnBreak, currentDuration, resetSession, undoReset, settings.autoSaveBeforeReset]);
+
   // Keyboard shortcuts
   useKeyboardShortcuts({
     isWorking, isPaused, isOnBreak,
@@ -142,7 +172,7 @@ export const Dashboard = () => {
     onStop: handleStop,
     onPause: pauseWork,
     onResume: resumeWork,
-    onReset: resetSession,
+    onReset: handleReset,
   });
 
   // Calculate remaining shift time
