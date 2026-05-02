@@ -96,6 +96,7 @@ export const Dashboard = () => {
     resumeWork,
     stopWork,
     resetSession,
+    undoReset,
     updateSettings,
     updateSchedule,
     exportJSON,
