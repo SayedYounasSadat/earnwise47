@@ -19,6 +19,21 @@ import { toast } from "@/hooks/use-toast";
 import { loadUserData, saveUserData } from "@/services/firestoreSync";
 
 const STORAGE_KEY = "earnings-tracker-data";
+const RESET_SNAPSHOT_KEY = "earnings-tracker-reset-snapshot";
+const RESET_SNAPSHOT_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+interface ResetSnapshot {
+  savedAt: number;
+  isWorking: boolean;
+  isPaused: boolean;
+  isOnBreak: boolean;
+  currentBreakType: BreakType | null;
+  currentBreakStart: number | null;
+  currentSessionBreaks: BreakSession[];
+  currentSessionStart: number | null;
+  currentSessionDuration: number;
+  accumulatedDuration: number;
+}
 
 // Generate unique ID
 const generateId = (): string => {
