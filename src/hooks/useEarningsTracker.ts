@@ -1062,6 +1062,7 @@ export const useEarningsTracker = (userId?: string | null) => {
     resumeWork,
     stopWork,
     resetSession,
+    undoReset,
     updateSettings,
     updateSchedule,
     exportJSON,
