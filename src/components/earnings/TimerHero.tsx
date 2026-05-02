@@ -30,6 +30,8 @@ interface TimerHeroProps {
   onPause: () => void;
   onResume: () => void;
   onReset: () => void;
+  confirmReset?: boolean;
+  confirmStop?: boolean;
 }
 
 export const TimerHero = memo((props: TimerHeroProps) => {
@@ -38,6 +40,7 @@ export const TimerHero = memo((props: TimerHeroProps) => {
     exchangeRate, currencyCode, todayEarnings, dailyGoal, shiftRemaining,
     showShiftRemaining = true,
     onStart, onStop, onPause, onResume, onReset,
+    confirmReset = true, confirmStop = true,
   } = props;
 
   const goalProgress = Math.min((todayEarnings / Math.max(dailyGoal, 1)) * 100, 100);
@@ -117,6 +120,8 @@ export const TimerHero = memo((props: TimerHeroProps) => {
             onPause={onPause}
             onResume={onResume}
             onReset={onReset}
+            confirmReset={confirmReset}
+            confirmStop={confirmStop}
           />
           <div className="mt-3 flex items-center justify-center">
             <KeyboardShortcutsHint />
