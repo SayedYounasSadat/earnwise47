@@ -141,7 +141,7 @@ export const TimerControls = memo(
         </div>
 
         {/* Confirmation dialog for stopping */}
-        <AlertDialog open={confirmStop} onOpenChange={setConfirmStop}>
+        <AlertDialog open={confirmStopOpen} onOpenChange={setConfirmStopOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>End this session?</AlertDialogTitle>
@@ -159,7 +159,7 @@ export const TimerControls = memo(
         </AlertDialog>
 
         {/* Confirmation dialog for resetting */}
-        <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+        <AlertDialog open={confirmResetOpen} onOpenChange={setConfirmResetOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
