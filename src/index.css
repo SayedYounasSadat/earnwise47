@@ -285,3 +285,134 @@
   from { transform: scale(0.9); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
+
+/* ===== Techy Timer ===== */
+@keyframes tech-grid-pan {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 40px 40px, 40px 40px; }
+}
+@keyframes tech-scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+@keyframes tech-ring-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes tech-flicker {
+  0%, 100% { opacity: 1; }
+  47% { opacity: 1; }
+  48% { opacity: 0.6; }
+  49% { opacity: 1; }
+}
+@keyframes tech-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}
+
+.tech-stage {
+  position: relative;
+  background:
+    radial-gradient(ellipse at 50% 0%, hsl(175 70% 45% / 0.18), transparent 60%),
+    radial-gradient(ellipse at 50% 100%, hsl(180 80% 50% / 0.10), transparent 60%),
+    linear-gradient(180deg, hsl(220 40% 8%), hsl(220 45% 5%));
+  overflow: hidden;
+  isolation: isolate;
+}
+.tech-stage::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(hsl(175 70% 50% / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(175 70% 50% / 0.07) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  animation: tech-grid-pan 12s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.tech-stage::after {
+  content: "";
+  position: absolute; left: 0; right: 0; height: 40%;
+  background: linear-gradient(180deg, transparent, hsl(175 90% 60% / 0.08), transparent);
+  animation: tech-scan 6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.tech-corner {
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: hsl(175 80% 55% / 0.7);
+  border-style: solid;
+  border-width: 0;
+}
+.tech-corner.tl { top: 10px; left: 10px; border-top-width: 2px; border-left-width: 2px; }
+.tech-corner.tr { top: 10px; right: 10px; border-top-width: 2px; border-right-width: 2px; }
+.tech-corner.bl { bottom: 10px; left: 10px; border-bottom-width: 2px; border-left-width: 2px; }
+.tech-corner.br { bottom: 10px; right: 10px; border-bottom-width: 2px; border-right-width: 2px; }
+
+.tech-digits {
+  font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: hsl(175 90% 70%);
+  text-shadow:
+    0 0 8px hsl(175 90% 55% / 0.7),
+    0 0 22px hsl(175 90% 50% / 0.45),
+    0 0 50px hsl(180 100% 50% / 0.25);
+  font-variant-numeric: tabular-nums;
+}
+.tech-digits.is-paused {
+  color: hsl(38 95% 65%);
+  text-shadow: 0 0 8px hsl(38 95% 55% / 0.7), 0 0 22px hsl(38 95% 50% / 0.4);
+}
+.tech-digits.is-idle {
+  color: hsl(220 15% 75%);
+  text-shadow: 0 0 6px hsl(220 15% 60% / 0.3);
+}
+.tech-colon { animation: tech-blink 1s step-end infinite; }
+
+.tech-chip {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: hsl(175 60% 75%);
+  background: hsl(175 60% 30% / 0.18);
+  border: 1px solid hsl(175 70% 50% / 0.35);
+  padding: 4px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+.tech-chip .dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 999px;
+  background: hsl(145 80% 55%);
+  box-shadow: 0 0 8px hsl(145 80% 55%);
+  margin-right: 6px; vertical-align: middle;
+}
+.tech-chip.paused { color: hsl(38 95% 75%); border-color: hsl(38 90% 55% / 0.4); background: hsl(38 80% 30% / 0.18); }
+.tech-chip.paused .dot { background: hsl(38 95% 60%); box-shadow: 0 0 8px hsl(38 95% 60%); }
+.tech-chip.idle { color: hsl(220 15% 70%); border-color: hsl(220 15% 50% / 0.35); background: hsl(220 20% 20% / 0.4); }
+.tech-chip.idle .dot { background: hsl(220 15% 60%); box-shadow: none; }
+
+.tech-label {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: hsl(175 30% 60%);
+}
+
+.tech-ring-track { stroke: hsl(175 40% 25% / 0.6); }
+.tech-ring-fill {
+  stroke: hsl(175 90% 55%);
+  filter: drop-shadow(0 0 6px hsl(175 90% 55% / 0.7));
+  transition: stroke-dashoffset 1s linear;
+}
+.tech-ring-fill.paused { stroke: hsl(38 95% 60%); filter: drop-shadow(0 0 6px hsl(38 95% 55% / 0.7)); }
+.tech-ring-fill.idle { stroke: hsl(220 15% 50%); filter: none; }
+
+.tech-orbit { animation: tech-ring-spin 8s linear infinite; transform-origin: center; }
+.tech-flicker { animation: tech-flicker 4s linear infinite; }
