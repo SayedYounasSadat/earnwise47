@@ -1,7 +1,7 @@
-// Timer display component with animated digits
+// Techy timer display — circular HUD with glowing digits
 import { memo } from "react";
 import { cn } from "@/lib/utils";
-import { Coffee, Clock } from "lucide-react";
+import { Coffee, Activity, Pause as PauseIcon, Power } from "lucide-react";
 
 interface TimerDisplayProps {
   seconds: number;
@@ -10,88 +10,92 @@ interface TimerDisplayProps {
   shiftRemaining?: string | null;
 }
 
-const formatTime = (totalSeconds: number): { hours: string; minutes: string; seconds: string } => {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const secs = totalSeconds % 60;
-  return {
-    hours: hours.toString().padStart(2, "0"),
-    minutes: minutes.toString().padStart(2, "0"),
-    seconds: secs.toString().padStart(2, "0"),
-  };
-};
+const pad = (n: number) => n.toString().padStart(2, "0");
 
-const Digit = memo(({ value, isActive }: { value: string; isActive: boolean }) => (
-  <span
-    className={cn(
-      "inline-block w-[1.2ch] text-center transition-all duration-100",
-      isActive && "animate-count"
-    )}
-  >
-    {value}
-  </span>
-));
-Digit.displayName = "Digit";
+export const TimerDisplay = memo(({ seconds, isActive, isPaused }: TimerDisplayProps) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
 
-export const TimerDisplay = memo(({ seconds, isActive, isPaused, shiftRemaining }: TimerDisplayProps) => {
-  const time = formatTime(seconds);
+  const state = isPaused ? "paused" : isActive ? "active" : "idle";
 
-  const getStatus = () => {
-    if (isPaused) return { label: "On Break", color: "status-paused", dotColor: "bg-warning" };
-    if (isActive) return { label: "Working", color: "status-working", dotColor: "bg-success-foreground animate-pulse" };
-    return { label: "Not Working", color: "status-idle", dotColor: "bg-muted-foreground" };
-  };
+  // Ring progress: minute progress (0–60s) for an always-visible HUD pulse
+  const ringProgress = (s / 60) * 100;
+  const R = 130;
+  const C = 2 * Math.PI * R;
 
-  const status = getStatus();
+  const StatusIcon = isPaused ? Coffee : isActive ? Activity : Power;
+  const statusLabel = isPaused ? "ON BREAK" : isActive ? "TRACKING" : "STANDBY";
 
   return (
-    <div className="flex flex-col items-center gap-1.5 sm:gap-2">
-      {/* Status indicator */}
-      <div
-        className={cn(
-          "flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all duration-300",
-          isPaused ? "bg-warning/20 text-warning" : (isActive ? "status-working" : "status-idle")
-        )}
-      >
-        {isPaused ? (
-          <Coffee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        ) : (
-          <span className={cn("w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full", status.dotColor)} />
-        )}
-        {status.label}
+    <div className="relative flex flex-col items-center gap-4 select-none">
+      {/* Status chip */}
+      <div className={cn("tech-chip flex items-center", state === "paused" && "paused", state === "idle" && "idle")}>
+        <span className="dot" />
+        <StatusIcon className="w-3 h-3 mr-1.5 inline" />
+        {statusLabel}
       </div>
 
-      {/* Timer */}
-      <div
-        className={cn(
-          "timer-display text-4xl sm:text-5xl md:text-6xl transition-colors duration-300",
-          isPaused ? "text-warning" : (isActive ? "text-success" : "text-muted-foreground")
-        )}
-      >
-        <Digit value={time.hours[0]} isActive={isActive} />
-        <Digit value={time.hours[1]} isActive={isActive} />
-        <span className={cn("mx-0.5 sm:mx-1", isActive && !isPaused && "animate-pulse-soft")}>:</span>
-        <Digit value={time.minutes[0]} isActive={isActive} />
-        <Digit value={time.minutes[1]} isActive={isActive} />
-        <span className={cn("mx-0.5 sm:mx-1", isActive && !isPaused && "animate-pulse-soft")}>:</span>
-        <Digit value={time.seconds[0]} isActive={isActive} />
-        <Digit value={time.seconds[1]} isActive={isActive} />
-      </div>
+      {/* HUD ring + digits */}
+      <div className="relative w-[300px] h-[300px] sm:w-[340px] sm:h-[340px] flex items-center justify-center">
+        {/* Outer dashed orbit */}
+        <svg className="absolute inset-0 w-full h-full tech-orbit opacity-50" viewBox="0 0 320 320">
+          <circle cx="160" cy="160" r="155" fill="none"
+            stroke="hsl(175 80% 55% / 0.35)" strokeWidth="1"
+            strokeDasharray="2 8" />
+        </svg>
 
-      {/* Timer labels */}
-      <div className="flex gap-4 sm:gap-8 text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">
-        <span className="w-12 sm:w-16 text-center">Hours</span>
-        <span className="w-12 sm:w-16 text-center">Minutes</span>
-        <span className="w-12 sm:w-16 text-center">Seconds</span>
-      </div>
+        {/* Tick marks */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320">
+          {Array.from({ length: 60 }).map((_, i) => {
+            const isMajor = i % 5 === 0;
+            const len = isMajor ? 10 : 4;
+            const angle = (i * 6 - 90) * (Math.PI / 180);
+            const x1 = 160 + Math.cos(angle) * 145;
+            const y1 = 160 + Math.sin(angle) * 145;
+            const x2 = 160 + Math.cos(angle) * (145 - len);
+            const y2 = 160 + Math.sin(angle) * (145 - len);
+            return (
+              <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+                stroke={isMajor ? "hsl(175 80% 60% / 0.55)" : "hsl(175 60% 55% / 0.22)"}
+                strokeWidth={isMajor ? 1.5 : 1} strokeLinecap="round" />
+            );
+          })}
+        </svg>
 
-      {/* Shift remaining */}
-      {shiftRemaining && isActive && (
-        <div className="flex items-center gap-1.5 mt-1 sm:mt-2 px-3 py-1 rounded-full bg-muted/60 text-xs text-muted-foreground">
-          <Clock className="w-3 h-3" />
-          {shiftRemaining}
+        {/* Progress ring */}
+        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 320 320">
+          <circle cx="160" cy="160" r={R} fill="none" strokeWidth="3"
+            className="tech-ring-track" />
+          <circle cx="160" cy="160" r={R} fill="none" strokeWidth="3" strokeLinecap="round"
+            className={cn("tech-ring-fill", state === "paused" && "paused", state === "idle" && "idle")}
+            strokeDasharray={C}
+            strokeDashoffset={C * (1 - ringProgress / 100)} />
+        </svg>
+
+        {/* Inner ring decoration */}
+        <div className="absolute w-[230px] h-[230px] sm:w-[250px] sm:h-[250px] rounded-full border border-primary/15" />
+        <div className="absolute w-[230px] h-[230px] sm:w-[250px] sm:h-[250px] rounded-full border border-primary/10 blur-sm" />
+
+        {/* Center digits */}
+        <div className="relative z-10 flex flex-col items-center gap-1.5">
+          <div className="tech-label">ELAPSED</div>
+          <div className={cn(
+            "tech-digits text-4xl sm:text-5xl flex items-baseline",
+            state === "paused" && "is-paused",
+            state === "idle" && "is-idle",
+          )}>
+            <span className="tabular-nums">{pad(h)}</span>
+            <span className={cn("tech-colon mx-1", isActive && !isPaused && "tech-flicker")}>:</span>
+            <span className="tabular-nums">{pad(m)}</span>
+            <span className={cn("tech-colon mx-1", isActive && !isPaused && "tech-flicker")}>:</span>
+            <span className="tabular-nums">{pad(s)}</span>
+          </div>
+          <div className="flex gap-3 mt-1 tech-label opacity-70">
+            <span>HRS</span><span>MIN</span><span>SEC</span>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 });
