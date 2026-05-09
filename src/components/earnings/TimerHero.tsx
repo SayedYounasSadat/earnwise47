@@ -56,42 +56,43 @@ export const TimerHero = memo((props: TimerHeroProps) => {
   const StatusIcon = status.icon;
 
   return (
-    <section className="surface-card overflow-hidden">
+    <section className="surface-card overflow-hidden tech-stage border-primary/20">
+      {/* Corner brackets */}
+      <span className="tech-corner tl" />
+      <span className="tech-corner tr" />
+      <span className="tech-corner bl" />
+      <span className="tech-corner br" />
+
       {/* Slim goal bar at the very top */}
-      <div className="h-1 bg-muted/60 relative">
+      <div className="h-[3px] bg-primary/10 relative z-10">
         <div
           className={cn(
             "h-full transition-all duration-700 ease-out",
-            isGoalReached ? "bg-success" : "bg-primary"
+            isGoalReached ? "bg-success" : "bg-gradient-to-r from-primary/70 via-primary to-primary/70"
           )}
-          style={{ width: `${goalProgress}%` }}
+          style={{
+            width: `${goalProgress}%`,
+            boxShadow: "0 0 12px hsl(var(--primary) / 0.7)",
+          }}
         />
       </div>
 
-      <div className="px-5 sm:px-8 pt-5 sm:pt-6 pb-5 sm:pb-6">
-        {/* Status row */}
-        <div className="flex items-center justify-between mb-6 sm:mb-8">
-          <div className={cn("inline-flex items-center gap-2 text-xs sm:text-sm font-medium", status.text)}>
-            <span className={cn(
-              "w-1.5 h-1.5 rounded-full",
-              status.dot,
-              isWorking && !isPaused && !isOnBreak && "animate-pulse"
-            )} />
-            <StatusIcon className="w-3.5 h-3.5" />
-            <span>{status.label}</span>
+      <div className="relative z-10 px-5 sm:px-8 pt-6 sm:pt-8 pb-6 sm:pb-8">
+        {/* Status / HUD readouts */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <div className="tech-label flex items-center gap-2">
+            <span className="inline-block w-1 h-1 rounded-full bg-primary shadow-[0_0_6px_hsl(var(--primary))]" />
+            SYS::EARNWISE_v2
           </div>
-
-          <div className="text-[11px] sm:text-xs text-muted-foreground tabular-nums">
-            {showShiftRemaining && shiftRemaining ? shiftRemaining : (
-              <span>
-                ${todayEarnings.toFixed(0)}<span className="opacity-50"> / ${dailyGoal.toFixed(0)}</span>
-              </span>
-            )}
+          <div className="tech-label tabular-nums opacity-80">
+            {showShiftRemaining && shiftRemaining
+              ? `ETA ${shiftRemaining}`
+              : `GOAL ${todayEarnings.toFixed(0)} / ${dailyGoal.toFixed(0)}`}
           </div>
         </div>
 
-        {/* Hero: timer then earnings, centered, generous space */}
-        <div className="flex flex-col items-center text-center gap-5 sm:gap-6 py-2 sm:py-4">
+        {/* Hero: HUD timer + earnings */}
+        <div className="flex flex-col items-center text-center gap-5 sm:gap-7 py-1 sm:py-3">
           <TimerDisplay
             seconds={currentDuration}
             isActive={isWorking}
