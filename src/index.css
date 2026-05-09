@@ -416,3 +416,32 @@
 
 .tech-orbit { animation: tech-ring-spin 8s linear infinite; transform-origin: center; }
 .tech-flicker { animation: tech-flicker 4s linear infinite; }
+
+/* ===== Fullscreen Timer ===== */
+.fullscreen-timer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  border-radius: 0 !important;
+  border: none !important;
+}
+.fullscreen-timer .tech-corner { display: none; }
+.fullscreen-timer > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+.fullscreen-timer .tech-digits {
+  font-size: 5rem;
+  line-height: 1;
+}
+@media (min-width: 768px) {
+  .fullscreen-timer .tech-digits {
+    font-size: 7rem;
+  }
+}
