@@ -1,11 +1,11 @@
 // Timer hero — calm, focused, single-column centerpiece
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { TimerDisplay } from "./TimerDisplay";
 import { EarningsDisplay } from "./EarningsDisplay";
 import { TimerControls } from "./TimerControls";
 import { KeyboardShortcutsHint } from "./KeyboardShortcutsHint";
-import { Coffee, Pause as PauseIcon, Activity, Circle } from "lucide-react";
+import { Coffee, Pause as PauseIcon, Activity, Circle, Maximize2, Minimize2 } from "lucide-react";
 
 interface TimerHeroProps {
   isWorking: boolean;
@@ -43,6 +43,43 @@ export const TimerHero = memo((props: TimerHeroProps) => {
     confirmReset = true, confirmStop = true,
   } = props;
 
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Track fullscreen state
+  useEffect(() => {
+    const handleChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleChange);
+    return () => document.removeEventListener("fullscreenchange", handleChange);
+  }, []);
+
+  // F key toggles fullscreen
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (document.querySelector("[role='alertdialog']")) return;
+      if (e.code === "KeyF" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
   const goalProgress = Math.min((todayEarnings / Math.max(dailyGoal, 1)) * 100, 100);
   const isGoalReached = goalProgress >= 100;
 
@@ -56,7 +93,13 @@ export const TimerHero = memo((props: TimerHeroProps) => {
   const StatusIcon = status.icon;
 
   return (
-    <section className="surface-card overflow-hidden tech-stage border-primary/20">
+    <section
+      ref={sectionRef}
+      className={cn(
+        "surface-card overflow-hidden tech-stage border-primary/20",
+        isFullscreen && "fullscreen-timer"
+      )}
+    >
       {/* Corner brackets */}
       <span className="tech-corner tl" />
       <span className="tech-corner tr" />
@@ -84,10 +127,24 @@ export const TimerHero = memo((props: TimerHeroProps) => {
             <span className="inline-block w-1 h-1 rounded-full bg-primary shadow-[0_0_6px_hsl(var(--primary))]" />
             SYS::EARNWISE_v2
           </div>
-          <div className="tech-label tabular-nums opacity-80">
-            {showShiftRemaining && shiftRemaining
-              ? `ETA ${shiftRemaining}`
-              : `GOAL ${todayEarnings.toFixed(0)} / ${dailyGoal.toFixed(0)}`}
+          <div className="flex items-center gap-3">
+            <div className="tech-label tabular-nums opacity-80">
+              {showShiftRemaining && shiftRemaining
+                ? `ETA ${shiftRemaining}`
+                : `GOAL ${todayEarnings.toFixed(0)} / ${dailyGoal.toFixed(0)}`}
+            </div>
+            {/* Fullscreen toggle */}
+            <button
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Exit Fullscreen (F)" : "Enter Fullscreen (F)"}
+              className="p-2 rounded-lg border border-primary/30 bg-primary/10 text-primary/80 hover:bg-primary/20 hover:text-primary transition-colors"
+            >
+              {isFullscreen ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
+            </button>
           </div>
         </div>
 

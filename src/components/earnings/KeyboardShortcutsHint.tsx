@@ -7,6 +7,7 @@ const shortcuts = [
   { keys: ["Space"], action: "Start / Pause / Resume", context: "Toggle timer state" },
   { keys: ["Esc"], action: "Stop session", context: "End and save current session" },
   { keys: ["R"], action: "Reset timer", context: "Reset without saving" },
+  { keys: ["F"], action: "Fullscreen", context: "Toggle fullscreen timer mode" },
 ];
 
 const Kbd = ({ children }: { children: React.ReactNode }) => (
