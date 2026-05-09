@@ -1,11 +1,11 @@
 // Timer hero — calm, focused, single-column centerpiece
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { TimerDisplay } from "./TimerDisplay";
 import { EarningsDisplay } from "./EarningsDisplay";
 import { TimerControls } from "./TimerControls";
 import { KeyboardShortcutsHint } from "./KeyboardShortcutsHint";
-import { Coffee, Pause as PauseIcon, Activity, Circle } from "lucide-react";
+import { Coffee, Pause as PauseIcon, Activity, Circle, Maximize2, Minimize2 } from "lucide-react";
 
 interface TimerHeroProps {
   isWorking: boolean;
