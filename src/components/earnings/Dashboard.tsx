@@ -23,6 +23,7 @@ import { PomodoroTimer } from "./PomodoroTimer";
 import { StreakAchievements } from "./StreakAchievements";
 import { OvertimeCard } from "./OvertimeCard";
 import { MissedTimeCard } from "./MissedTimeCard";
+import { AIWeeklySummary } from "./AIWeeklySummary";
 import { WorldClockWidget } from "./WorldClockWidget";
 
 const BudgetTab = lazy(() => import("./BudgetTab").then(m => ({ default: m.BudgetTab })));
@@ -343,6 +344,7 @@ export const Dashboard = () => {
           {/* Analytics */}
           {activeSection === "analytics" && (
           <section className="space-y-4 sm:space-y-6 animate-fade-in">
+            <AIWeeklySummary sessions={sessions} settings={settings} />
             <EarningsChart sessions={sessions} />
 
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
